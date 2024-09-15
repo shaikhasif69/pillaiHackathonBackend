@@ -7,6 +7,7 @@ import {
   userProfile,
   verifyOTP,
 } from "../controllers/userController.js";
+import { getCommunityPostsAndEvents } from "../controllers/communityController.js";
 
 const userRouter = express.Router();
 
@@ -14,6 +15,7 @@ userRouter.post("/signup", signup);
 userRouter.post("/signin", signin);
 userRouter.post("/verify-otp", verifyOTP);
 userRouter.post("/resend-otp", resendOTP);
+userRouter.get("/getCommunity-Posts", auth, getCommunityPostsAndEvents);
 userRouter.get("/profile", auth, userProfile);
 
 export default userRouter;

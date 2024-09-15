@@ -8,13 +8,17 @@ export const writePost = async (req, res) => {
   const { communityId, content, tags } = req.body; // Accept tags in the request body
   const file = req.file; // Get the uploaded image file (if any)
   console.log(req.userId);
-  console.log("coom", content);
+  console.log("coom", communityId);
 
   try {
     // Find the community by ID
     const community = await Community.findById(communityId);
+
     if (!community) {
       return res.status(404).json({ message: "Community not found" });
+    }
+    if (community.status === "pending") {
+      return res.status(403).json({ message: "Community is pending approval" });
     }
 
     // Check if the user is a member of the community

@@ -184,16 +184,23 @@ export const getPendingCommunities = async (req, res) => {
   }
 };
 export const createEvent = async (req, res) => {
-  const { title, description, communityId, date } = req.body;
+  const { title, description, communityId } = req.body;
   const userId = req.userId; // Get userId from auth middleware
+  const file = req.file; // Assuming the image is passed via multipart/form-data
+  console.log(title);
   console.log(userId);
+  console.log(communityId);
   try {
     // Fetch the community to check if the user is the creator
     const community = await Community.findById(communityId);
     if (!community) {
       return res.status(404).json({ message: "Community not found" });
     }
-
+    if (community.status === "pending") {
+      return res
+        .status(403)
+        .json({ message: "Only approved communities can create events" });
+    }
     // Ensure the user is the creator of the community
     if (community.creator.userId.toString() !== userId) {
       return res
@@ -206,7 +213,29 @@ export const createEvent = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    let imageUrl = "";
+    if (file) {
+      // Upload image directly to Cloudinary
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.v2.uploader
+          .upload_stream(
+            {
+              folder: "event_images",
+              resource_type: "auto", // Automatically detect the file type
+            },
+            (error, result) => {
+              if (error) {
+                reject(new Error(error.message));
+              } else {
+                resolve(result);
+              }
+            }
+          )
+          .end(file.buffer); // Pass the buffer to Cloudinary
+      });
 
+      imageUrl = uploadResult.secure_url; // Save the image URL
+    }
     const newEvent = new Event({
       title,
       description,
@@ -216,6 +245,7 @@ export const createEvent = async (req, res) => {
         username: user.username,
       },
       status: "pending", // Set status to 'pending' by default
+      imageUrl: imageUrl, // Save the image URL to the event, if provided by the user
     });
 
     await newEvent.save();
@@ -226,6 +256,113 @@ export const createEvent = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const updateEvent = async (req, res) => {
+  const { eventId } = req.params; // Event ID from the request parameters
+  const { title, description } = req.body;
+  const userId = req.userId; // Get userId from auth middleware
+  const file = req.file; // Assuming the image is passed via multipart/form-data
+
+  try {
+    // Find the event by ID
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Ensure the user is the creator of the event
+    if (event.creator.userId.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Only the event creator can update the event" });
+    }
+
+    // If there's a file, upload it to Cloudinary
+    let imageUrl = event.imageUrl; // Retain old image URL if no new image is provided
+    if (file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.v2.uploader
+          .upload_stream(
+            {
+              folder: "event_images",
+              resource_type: "auto",
+            },
+            (error, result) => {
+              if (error) {
+                reject(new Error(error.message));
+              } else {
+                resolve(result);
+              }
+            }
+          )
+          .end(file.buffer);
+      });
+
+      imageUrl = uploadResult.secure_url;
+    }
+
+    // Update the event fields
+    event.title = title || event.title;
+    event.description = description || event.description;
+    event.imageUrl = imageUrl;
+
+    await event.save(); // Save the updated event
+
+    res.status(200).json(event);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+export const deleteEvent = async (req, res) => {
+  const { eventId } = req.params; // Event ID from the request parameters
+  const userId = req.userId; // Get userId from auth middleware
+
+  try {
+    // Find the event by ID
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Ensure the user is the creator of the event
+    if (event.creator.userId.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Only the event creator can delete the event" });
+    }
+
+    // Delete the event
+    await event.deleteOne();
+
+    res.status(200).json({ message: "Event deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+
+export const getUserCreatedEvents = async (req, res) => {
+  const userId = req.userId; // Get userId from auth middleware
+
+  try {
+    // Fetch all events where the creator's userId matches the current user
+    const events = await Event.find({ "creator.userId": userId });
+
+    // If no events found, return an empty array
+    if (!events.length) {
+      return res.status(404).json({ message: "No events found" });
+    }
+
+    res.status(200).json(events); // Return the events created by the user
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+
 export const approveEvent = async (req, res) => {
   const { eventId, status } = req.body;
   const facultyId = req.userId; // Get facultyId from auth middleware (assumed to be logged in faculty)
@@ -519,6 +656,34 @@ export const getTrendingTags = async (req, res) => {
     const trendingTags = await Tag.find().sort({ usageCount: -1 }).limit(10); // Get top 10 tags
 
     res.status(200).json(trendingTags);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+export const getCommunityPostsAndEvents = async (req, res) => {
+  const userId = req.userId; // Get userId from auth middleware
+
+  try {
+    // Fetch the communities the user has joined
+    const communities = await Community.find({
+      "members.userId": userId,
+      status: "approved",
+    }).populate("posts");
+    console.log(communities);
+    if (!communities || communities.length === 0) {
+      return res.status(404).json({ message: "No joined communities found" });
+    }
+
+    // Fetch the events for the joined communities
+    const communityIds = communities.map((community) => community._id);
+    const events = await Event.find({
+      community: { $in: communityIds },
+      status: "approved",
+    });
+
+    res.status(200).json({ communities, events });
   } catch (error) {
     res
       .status(500)

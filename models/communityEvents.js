@@ -26,6 +26,10 @@ const eventSchema = new mongoose.Schema({
       required: true,
     },
   },
+  imageUrl: {
+    type: String, // URL to the image stored on Cloudinary
+    required: false,
+  },
   status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
