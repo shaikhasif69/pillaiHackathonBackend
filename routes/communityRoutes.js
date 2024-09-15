@@ -6,13 +6,16 @@ import {
   createCommunity,
   createEvent,
   deleteCommunity,
+  deleteEvent,
   getPendingCommunities,
   getPostsByCommunity,
   getTrendingTags,
   getUserCommunities,
+  getUserCreatedEvents,
   joinCommunity,
   listCommunities,
   updateCommunity,
+  updateEvent,
 } from "./../controllers/communityController.js";
 import {
   deletePost,
@@ -37,8 +40,17 @@ communityRouter.get("/pending-community-approval", auth, getPendingCommunities);
 communityRouter.get("/get-community", auth, getUserCommunities);
 
 // EVENTS Routes
-communityRouter.post("/events", auth, createEvent); // Create an event
-communityRouter.patch("/events/approve", auth, approveEvent); // Approve an event
+communityRouter.post("/events", auth, upload.single("image"), createEvent); // Create an event
+communityRouter.put(
+  "/update-event/:eventId",
+  auth,
+  upload.single("image"),
+  updateEvent
+); // update an event
+communityRouter.delete("/delete-event/:eventId", auth, deleteEvent); // update an event
+communityRouter.post("/events/approve", auth, approveEvent); // Approve an event
+communityRouter.get("/getAdminEvents", auth, getUserCreatedEvents); // Approve an event
+
 communityRouter.get(
   "/communities/:communityId/events",
   auth,
