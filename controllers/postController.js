@@ -1,10 +1,14 @@
+import cloudinary from "../helpers/cloudinary.js";
 import Community from "../models/community.js";
+import Event from "../models/communityEvents.js";
 import Tag from "../models/trending.js";
 import User from "../models/user.js"; // Import the User model
 import mongoose from "mongoose";
 export const writePost = async (req, res) => {
   const { communityId, content, tags } = req.body; // Accept tags in the request body
+  const file = req.file; // Get the uploaded image file (if any)
   console.log(req.userId);
+  console.log("coom", content);
 
   try {
     // Find the community by ID
@@ -46,14 +50,39 @@ export const writePost = async (req, res) => {
       }
     }
 
-    // Create a new post with author's name and tags
+    let imageUrl = "";
+    if (file) {
+      // Upload image directly to Cloudinary
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.v2.uploader
+          .upload_stream(
+            {
+              folder: "post_images",
+              resource_type: "auto", // Automatically detect the file type
+            },
+            (error, result) => {
+              if (error) {
+                reject(new Error(error.message));
+              } else {
+                resolve(result);
+              }
+            }
+          )
+          .end(file.buffer); // Pass the buffer to Cloudinary
+      });
+
+      imageUrl = uploadResult.secure_url; // Save the image URL
+    }
+
+    // Create a new post with author's name, tags, and image URL
     const newPost = {
       content,
       author: {
         id: req.userId,
         username: author.username,
       },
-      tags: tagIds, // Add the tag IDs to the post
+      tags: tagIds,
+      imageUrl: imageUrl, // Add the image URL to the post
     };
 
     // Add the new post to the community
@@ -72,6 +101,7 @@ export const writePost = async (req, res) => {
 
 export const updatePost = async (req, res) => {
   const { communityId, postId, content } = req.body;
+  const file = req.file; // Get the uploaded image file (if any)
 
   try {
     // Find the community by ID
@@ -94,7 +124,34 @@ export const updatePost = async (req, res) => {
     }
 
     // Update the post content
-    post.content = content;
+    if (content) {
+      post.content = content;
+    }
+
+    // Handle image upload
+    if (file) {
+      // Upload image to Cloudinary
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.v2.uploader
+          .upload_stream(
+            {
+              folder: "post_images",
+              resource_type: "auto",
+            },
+            (error, result) => {
+              if (error) {
+                reject(new Error(error.message));
+              } else {
+                resolve(result);
+              }
+            }
+          )
+          .end(file.buffer);
+      });
+
+      // Update the post with the new image URL
+      post.imageUrl = uploadResult.secure_url;
+    }
 
     // Save the updated community
     await community.save();
@@ -151,6 +208,44 @@ export const deletePost = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const getApprovedEvents = async (req, res) => {
+  const { communityId } = req.params;
+  const userId = req.userId; // Get userId from auth middleware
+
+  try {
+    // Check if the user is a member of the community
+    const community = await Community.findById(communityId);
+    if (!community) {
+      return res.status(404).json({ message: "Community not found" });
+    }
+
+    const isMember = community.members.some(
+      (member) => member.userId.toString() === userId
+    );
+    if (!isMember) {
+      return res
+        .status(403)
+        .json({ message: "Only community members can view events" });
+    }
+
+    // Find all approved events for the community
+    const events = await Event.find({
+      community: communityId,
+      status: "approved",
+    });
+
+    if (events.length === 0) {
+      return res.status(404).json({ message: "No approved events found" });
+    }
+
+    res.status(200).json(events);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+
 export const getUserFeed = async (req, res) => {
   const userId = req.userId; // Assuming userId is obtained from authentication middleware
   const { tags: filterTags, page = 1, limit = 10 } = req.query; // Pagination parameters

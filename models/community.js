@@ -11,7 +11,10 @@ const postSchema = new mongoose.Schema({
     username: { type: String, required: true }, // Add name field
   },
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }], // Reference tags by their ID
-
+  imageUrl: {
+    type: String,
+    default: "",
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -60,6 +63,23 @@ const communitySchema = new mongoose.Schema({
         month: "long",
         day: "numeric",
       }), // Formats date to "Month Day, Year"
+  },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  imageUrl: {
+    type: String, // URL to the image stored on Cloudinary
+    required: false,
+  },
+  facultyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User", // Assuming the faculty user is also a User
+  },
+  approvedFaculty: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Faculty",
   },
 });
 communitySchema.set("toJSON", { getters: true });
