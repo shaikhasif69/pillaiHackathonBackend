@@ -15,10 +15,7 @@ app.use("/users", userRouter);
 app.use("/build", communityRouter);
 app.get("/", (req, res) => {
   res.send(
-    ```aai ghala changes adhich sangat java 
-    mala 18 parent backend end krycha aahe
-     i'm on a mission to find a  girl
-    ```
+    `aai ghala changes adhich sangat java  mala 18 parent backend end krycha aahe m on a mission to find a  girl`
   );
 });
 
