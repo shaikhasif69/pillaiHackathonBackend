@@ -1,15 +1,20 @@
-const express = require("express");
-const connectDB = require("./db");
-require("dotenv").config();
-const http = require("http");
+// const connectDB = require("./db");
+// require("dotenv").config();
+// const port = process.env.PORT;
+const port = 3000;
+import http from "http";
+import express from "express";
+import { connectDB } from "./db.js";
+import userRouter from "./routes/userRoutes.js";
+import communityRouter from "./routes/communityRoutes.js";
 const app = express();
-const port = process.env.PORT;
 const server = http.createServer(app);
 app.use(express.json());
 connectDB();
-
+app.use("/users", userRouter);
+app.use("/build", communityRouter);
 app.get("/", (req, res) => {
-  res.send("hello world@")
+  res.send("hello world@");
 });
 
 server.listen(port, () => {
