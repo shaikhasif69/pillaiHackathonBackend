@@ -14,7 +14,12 @@ connectDB();
 app.use("/users", userRouter);
 app.use("/build", communityRouter);
 app.get("/", (req, res) => {
-  res.send("hello world@");
+  res.send(
+    ```aai ghala changes adhich sangat java 
+    mala 18 parent backend end krycha aahe
+     i'm on a mission to find a  girl
+    ```
+  );
 });
 
 server.listen(port, () => {
