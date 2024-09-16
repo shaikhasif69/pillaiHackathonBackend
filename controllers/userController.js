@@ -1,5 +1,6 @@
 // import userModel from "../models/user";
 import userModel from "../models/user.js";
+import UserForm from "../models/userFormScheme.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import otpModel from "../models/otp.js";
@@ -11,7 +12,7 @@ const SECRET = "PILLAI";
 
 export const signup = async (req, res) => {
   const { email, username, password } = req.body;
-
+  console.log("someone hitting : " + email + " " + password);
   try {
     const existingCollegeStudent = await Student.findOne({ email });
     const existingCollegeFaculty = await Faculty.findOne({ email });
@@ -27,7 +28,7 @@ export const signup = async (req, res) => {
 
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiration = Date.now() + 10 * 60 * 1000; // 10-minute validity
+    const otpExpiration = Date.now() + 10 * 60 * 1000;
 
     // Store OTP with user data (password stored temporarily)
     const hashedPassword = await bcrypt.hash(password, 10); // Hash password before storing
@@ -154,5 +155,52 @@ export const userProfile = async (req, res) => {
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const saveUserForm = async (req, res) => {
+  const {
+    userId,
+    academicStream,
+    yearOfStudy,
+    academicInterests,
+    extracurricularInterests,
+    activityPreference,
+    timeCommitment,
+    communityEngagement,
+    communityType,
+    leadershipPreference,
+    longTermGoal,
+    collaborationPreference,
+  } = req.body;
+
+  try {
+    const userForm = new UserForm({
+      userId,
+      academicStream,
+      yearOfStudy,
+      academicInterests,
+      extracurricularInterests,
+      activityPreference,
+      timeCommitment,
+      communityEngagement,
+      communityType,
+      leadershipPreference,
+      longTermGoal,
+      collaborationPreference,
+    });
+
+    // Save the form to the database
+    await userForm.save();
+
+    res.status(201).json({
+      message: "Form data saved successfully.",
+      formData: userForm,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Failed to save form data.",
+    });
   }
 };
