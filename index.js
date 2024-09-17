@@ -23,6 +23,10 @@ app.use(express.json());
 connectDB();
 
 app.use("/users", userRouter);
+app.use(express.static('public'))
+
+app.set("views", "views");
+app.set("view engine", "ejs");
 app.use("/build", communityRouter);
 app.use("/council", councilRoutes);
 app.use("/admin", adminRouter);

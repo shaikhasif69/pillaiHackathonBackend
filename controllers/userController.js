@@ -59,6 +59,8 @@ export const signup = async (req, res) => {
 export const signin = async (req, res) => {
   const { email, password } = req.body;
 
+  console.log("data i am getting: " + email + " " + password)
+
   try {
     const existingUser = await userModel.findOne({ email: email });
     if (!existingUser) {
