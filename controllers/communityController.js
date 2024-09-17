@@ -619,7 +619,7 @@ export const listCommunities = async (req, res) => {
 
     // Retrieve communities with pagination
     const communities = await Community.find()
-      .select("name description creator createdAt")
+      .select("name description creator createdAt, imageUrl status")
       .skip(skip)
       .limit(parseInt(limit)); // Adjust the fields as needed
 
