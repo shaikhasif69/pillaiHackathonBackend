@@ -21,7 +21,7 @@ userRouter.post("/resend-otp", resendOTP);
 userRouter.post("/user-form", saveUserForm);
 
 userRouter.get("/getCommunity-Posts", auth, getCommunityPostsAndEvents);
-userRouter.get("/profile", auth, userProfile);
+userRouter.get("/profile", auth, getUserProfile);
 
 userRouter.get("/admin", (req, res) => {
   res.render("home");
