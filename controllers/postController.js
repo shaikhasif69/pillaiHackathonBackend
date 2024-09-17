@@ -322,3 +322,79 @@ export const getUserFeed = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const getTrendingTags1 = async (req, res) => {
+  const { communityId } = req.params;
+  console.log(communityId);
+  try {
+    const community = await Community.findById(communityId).populate({
+      path: "posts.tags",
+      select: "name", // Only populate the tag name to reduce data size
+    });
+
+    if (!community) {
+      return res.status(404).json({ message: "Community not found" });
+    }
+
+    // Get the tags and their usage within this community
+    const tagUsage = {};
+
+    community.posts.forEach((post) => {
+      post.tags.forEach((tag) => {
+        if (tagUsage[tag._id]) {
+          tagUsage[tag._id].count += 1;
+        } else {
+          tagUsage[tag._id] = {
+            tagId: tag._id, // Include the tag ID here
+            tagName: tag.name, // Include the tag name
+            count: 1,
+          };
+        }
+      });
+    });
+
+    // Sort tags by usage count in descending order and limit to top 10
+    const sortedTags = Object.values(tagUsage)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    res.status(200).json(sortedTags);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+
+export const getPostsByTag = async (req, res) => {
+  const { communityId, tagId } = req.params;
+
+  try {
+    // Find the community and populate the posts' tags
+    const community = await Community.findById(communityId).populate({
+      path: "posts.tags",
+      select: "name", // populate only the tag name field
+    });
+
+    if (!community) {
+      return res.status(404).json({ message: "Community not found" });
+    }
+
+    // Filter posts that contain the selected tagId
+    const postsWithTag = community.posts.filter((post) =>
+      post.tags.some((tag) => tag._id.toString() === tagId)
+    );
+
+    if (postsWithTag.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No posts found with the selected tag" });
+    }
+
+    res.status(200).json(postsWithTag);
+  } catch (error) {
+    console.error("Error fetching posts by tag:", error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
