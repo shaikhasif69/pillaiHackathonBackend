@@ -12,6 +12,7 @@ import socketHandler from "./socket.js";
 import { Server } from "socket.io";
 import Faculty from "./models/pillaiFaculty.js";
 import User from "./models/user.js";
+import adminRouter from "./routes/admin.js";
 const SECRET = "PILLAI";
 
 const app = express();
@@ -24,6 +25,7 @@ connectDB();
 app.use("/users", userRouter);
 app.use("/build", communityRouter);
 app.use("/council", councilRoutes);
+app.use("/admin", adminRouter);
 app.get("/", (req, res) => {
   res.send(
     `aai ghala changes adhich sangat java  mala 18 parent backend end krycha aahe m on a mission to find a  girl`

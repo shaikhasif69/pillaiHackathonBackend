@@ -20,6 +20,8 @@ import {
 import {
   deletePost,
   getApprovedEvents,
+  getPostsByTag,
+  getTrendingTags1,
   getUserFeed,
   updatePost,
   writePost,
@@ -77,5 +79,7 @@ communityRouter.delete("/deletePost", auth, deletePost);
 // SPECIFIC ROUTES
 communityRouter.get("/list-communities", listCommunities);
 communityRouter.get("/trendingTags", getTrendingTags);
+communityRouter.get("/trends/:communityId", getTrendingTags1);
+communityRouter.get("/posts/:communityId/tags/:tagId/posts", getPostsByTag);
 
 export default communityRouter;
