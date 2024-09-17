@@ -8,13 +8,17 @@ import {
   deleteCommunity,
   deleteEvent,
   getAllEvents,
+  getEnrolledEvents,
   getEventsByCommunity,
+  getOngoingEvents,
   getPendingCommunities,
   getPostsByCommunity,
   getTrendingTags,
+  getUpcomingEvents,
   getUserCommunities,
   getUserCreatedEvents,
   joinCommunity,
+  joinEvent,
   listCommunities,
   updateCommunity,
   updateEvent,
@@ -41,6 +45,11 @@ communityRouter.post(
 communityRouter.post("/approve-community", auth, approveCommunity);
 communityRouter.get("/pending-community-approval", auth, getPendingCommunities);
 
+communityRouter.get("/get-community", auth, getUserCommunities);
+communityRouter.get("/getupcoming", getUpcomingEvents);
+communityRouter.get("/getongoing", getOngoingEvents);
+communityRouter.post("/joinEvent/:eventId", auth, joinEvent);
+communityRouter.get("/enrolled-event", auth, getEnrolledEvents);
 communityRouter.get("/get-community", auth, getUserCommunities);
 
 // EVENTS Routes

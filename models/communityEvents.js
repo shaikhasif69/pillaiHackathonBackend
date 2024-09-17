@@ -30,6 +30,7 @@ const eventSchema = new mongoose.Schema({
     type: String, // URL to the image stored on Cloudinary
     required: false,
   },
+
   status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
@@ -39,6 +40,19 @@ const eventSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  participants: [
+    {
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      username: {
+        type: String,
+        required: true,
+      },
+    },
+  ],
 });
 
 const Event = mongoose.model("Event", eventSchema);
