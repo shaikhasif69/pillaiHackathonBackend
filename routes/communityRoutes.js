@@ -7,6 +7,8 @@ import {
   createEvent,
   deleteCommunity,
   deleteEvent,
+  getAllEvents,
+  getEventsByCommunity,
   getPendingCommunities,
   getPostsByCommunity,
   getTrendingTags,
@@ -51,7 +53,9 @@ communityRouter.put(
 ); // update an event
 communityRouter.delete("/delete-event/:eventId", auth, deleteEvent); // update an event
 communityRouter.post("/events/approve", auth, approveEvent); // Approve an event
-communityRouter.get("/getAdminEvents", auth, getUserCreatedEvents); // Approve an event
+communityRouter.get("/getUserEvents", auth, getUserCreatedEvents); // Approve an event
+communityRouter.get("/getCommunityEvents/:communityId", getEventsByCommunity); // Approve an event
+communityRouter.get("/getAllEvents", getAllEvents); // Approve an event
 
 communityRouter.get(
   "/communities/:communityId/events",

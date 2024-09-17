@@ -342,7 +342,29 @@ export const deleteEvent = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const getEventsByCommunity = async (req, res) => {
+  const { communityId } = req.params;
 
+  try {
+    // Find events associated with the provided communityId
+    const events = await Event.find({ community: communityId })
+      .populate("community", "name") // Populate community name
+      .populate("creator.userId", "username imageUrl"); // Populate creator details
+
+    if (events.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No events found for this community." });
+    }
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error("Error fetching events for the community:", error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
 export const getUserCreatedEvents = async (req, res) => {
   const userId = req.userId; // Get userId from auth middleware
 
@@ -362,7 +384,25 @@ export const getUserCreatedEvents = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const getAllEvents = async (req, res) => {
+  try {
+    // Fetch all events from the database
+    const events = await Event.find()
+      .populate("community", "name") // Populate community name
+      .populate("creator.userId", "username imageUrl"); // Populate creator details
 
+    if (events.length === 0) {
+      return res.status(404).json({ message: "No events found." });
+    }
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error("Error fetching all events:", error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
 export const approveEvent = async (req, res) => {
   const { eventId, status } = req.body;
   const facultyId = req.userId; // Get facultyId from auth middleware (assumed to be logged in faculty)
