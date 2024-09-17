@@ -13,6 +13,10 @@ const userSchema = new mongoose.Schema({
     //   message: "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character"
     // }
   },
+  imageUrl: {
+    type: String,
+    default: "", // default placeholder image URL
+  },
 });
 
 const User = mongoose.model("User", userSchema);
