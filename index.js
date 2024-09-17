@@ -10,6 +10,10 @@ import communityRouter from "./routes/communityRoutes.js";
 import councilRoutes from "./routes/council.js";
 import socketHandler from "./socket.js";
 import { Server } from "socket.io";
+import Faculty from "./models/pillaiFaculty.js";
+import User from "./models/user.js";
+const SECRET = "PILLAI";
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -25,6 +29,43 @@ app.get("/", (req, res) => {
     `aai ghala changes adhich sangat java  mala 18 parent backend end krycha aahe m on a mission to find a  girl`
   );
 });
+export const getFaculty = async (req, res) => {
+  try {
+    // Fetch all faculty members
+    const facultyMembers = await Faculty.find();
+
+    // Extract emails of all faculty members
+    const facultyEmails = facultyMembers.map((faculty) => faculty.email);
+
+    // Fetch users with the extracted faculty emails
+    const facultyUsers = await User.find({ email: { $in: facultyEmails } });
+
+    // Create a mapping of email to faculty details
+    const facultyMapping = facultyMembers.reduce((acc, faculty) => {
+      acc[faculty.email] = {
+        department: faculty.department,
+        subject: faculty.subject,
+        experience: faculty.experience,
+        gender: faculty.gender,
+        profession: faculty.profession, // Assuming profession field exists
+      };
+      return acc;
+    }, {});
+
+    // Merge user profiles with faculty details
+    const facultyProfiles = facultyUsers.map((user) => ({
+      ...user.toObject(), // Spread the user fields
+      ...facultyMapping[user.email], // Add the faculty-specific fields
+    }));
+
+    res.status(200).json(facultyProfiles);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+app.get("/faculty", getFaculty);
 // Socket.io middleware and connection
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;

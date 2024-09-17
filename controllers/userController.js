@@ -7,6 +7,10 @@ import otpModel from "../models/otp.js";
 import { sendOTPEmail } from "../helpers/email_sender.js";
 import Student from "../models/pillaiStudent.js";
 import Faculty from "../models/pillaiFaculty.js";
+import User from "../models/user.js";
+import cloudinary from "../helpers/cloudinary.js";
+import Event from "../models/communityEvents.js";
+import Community from "../models/community.js";
 
 const SECRET = "PILLAI";
 
@@ -139,25 +143,137 @@ export const resendOTP = async (req, res) => {
       .json({ message: "Failed to resend OTP. Please try again." });
   }
 };
-export const userProfile = async (req, res) => {
-  const userId = req.userId; // Assuming auth middleware sets req.user to the userID
-
+export const getUserProfile = async (req, res) => {
+  const userId = req.userId; // Assuming userId comes from auth middleware
+  console.log(userId);
   try {
-    // Fetch user from the database using the userID
-    const user = await userModel.findById(userId);
+    // Fetch basic user profile
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Send the user data
-    res.json({ user });
+    // Fetch user-related posts
+    const posts = await Community.aggregate([
+      { $match: { "posts.author.id": userId } },
+      { $unwind: "$posts" },
+      { $match: { "posts.author.id": userId } },
+      {
+        $project: {
+          _id: "$posts._id",
+          content: "$posts.content",
+          imageUrl: "$posts.imageUrl",
+          createdAt: "$posts.createdAt",
+          communityName: "$name",
+        },
+      },
+    ]);
+
+    // Fetch communities created by the user
+    const communitiesCreated = await Community.find({
+      "creator.userId": userId,
+    });
+
+    // Fetch communities the user is a member of
+    // const communitiesJoined = await Community.find({
+    //   facultyId: userId,
+
+    // });
+    // Fetch communities where the user is a member or a faculty
+    const communitiesJoined = await Community.find({
+      $or: [{ "members.userId": userId }, { facultyId: userId }],
+    });
+
+    // Fetch events created by the user
+    const events = await Event.find({ "creator.userId": userId });
+
+    // Check if the user is a faculty member
+    const faculty = await Faculty.findOne({ email: user.email });
+    let facultyDetails = null;
+
+    if (faculty) {
+      facultyDetails = {
+        department: faculty.department,
+        subject: faculty.subject,
+        experience: faculty.experience,
+        gender: faculty.gender,
+        profession: faculty.profession,
+      };
+    }
+
+    // Return the user's profile information along with associated data
+    res.status(200).json({
+      username: user.username,
+      email: user.email,
+      imageUrl: user.imageUrl,
+      facultyDetails, // This will be null if not a faculty member
+      posts,
+      communitiesCreated,
+      communitiesJoined,
+      events,
+    });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const editProfile = async (req, res) => {
+  const userId = req.userId; // Assuming userId comes from auth middleware
+  console.log(userId);
+  const { username, email } = req.body;
+  const file = req.file; // Assuming file is uploaded via multer middleware
 
+  let imageUrl = ""; // Initialize imageUrl
+
+  try {
+    if (file) {
+      // Upload image directly to Cloudinary
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.v2.uploader
+          .upload_stream(
+            {
+              folder: "profile_images", // Adjust the folder name if needed
+              resource_type: "auto", // Automatically detect the file type
+            },
+            (error, result) => {
+              if (error) {
+                reject(new Error(error.message));
+              } else {
+                resolve(result);
+              }
+            }
+          )
+          .end(file.buffer); // Pass the buffer to Cloudinary
+      });
+
+      imageUrl = uploadResult.secure_url; // Save the image URL
+    }
+
+    // Find and update the user profile with only provided fields
+    const updates = { username, email };
+    if (imageUrl) {
+      updates.imageUrl = imageUrl; // Add imageUrl to updates if available
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updates }, // Use $set to update only specified fields
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
 export const saveUserForm = async (req, res) => {
   const {
     userId,
