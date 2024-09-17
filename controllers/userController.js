@@ -55,6 +55,8 @@ export const signup = async (req, res) => {
 export const signin = async (req, res) => {
   const { email, password } = req.body;
 
+  console.log("data i am getting: " + email + " " + password)
+
   try {
     const existingUser = await userModel.findOne({ email: email });
     if (!existingUser) {
@@ -140,7 +142,8 @@ export const resendOTP = async (req, res) => {
   }
 };
 export const userProfile = async (req, res) => {
-  const userId = req.userId; // Assuming auth middleware sets req.user to the userID
+  const userId = req.userId;
+  console.log("user id: " + userId);
 
   try {
     // Fetch user from the database using the userID

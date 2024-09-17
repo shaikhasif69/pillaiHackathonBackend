@@ -21,5 +21,14 @@ userRouter.post('/user-form', saveUserForm);
 userRouter.get("/getCommunity-Posts", auth, getCommunityPostsAndEvents);
 userRouter.get("/profile", auth, userProfile);
 
+userRouter.get("/admin", (req, res) => {
+  res.render("home");
+});
+userRouter.get("/admin/login", (req, res) => {
+  res.render("authentication/sign-in");
+});
 
+userRouter.get("/admin/sign-up", (req, res) => {
+  res.render("authentication/sign-up");
+});
 export default userRouter;
