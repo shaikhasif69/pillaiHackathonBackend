@@ -183,8 +183,190 @@ export const getPendingCommunities = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const getUpcomingEvents = async (req, res) => {
+  try {
+    const today = new Date();
+    // Fetch all approved events where the event date is greater than today's date
+    const events = await Event.find({
+      date: { $gt: today },
+      status: "pending", // Use "approved" for upcoming events instead of "pending"
+    });
+
+    // Process events to include participant count and details
+    const processedEvents = events.map((event) => {
+      const participantCount = event.participants.length;
+      const participantDetails = event.participants.map((participant) => ({
+        userId: participant.userId,
+        username: participant.username,
+      }));
+
+      return {
+        ...event.toObject(), // Convert Mongoose document to plain object
+        participantCount,
+        participantDetails,
+      };
+    });
+
+    // Calculate total number of participants
+    const totalParticipants = processedEvents.reduce(
+      (total, event) => total + event.participantCount,
+      0
+    );
+
+    // Include totalParticipants in the response
+    res.status(200).json({
+      events: processedEvents,
+      totalParticipants,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching upcoming events",
+      error: error.message,
+    });
+  }
+};
+
+// Get Ongoing Events
+export const getOngoingEvents = async (req, res) => {
+  try {
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0)); // Start of the current day
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999)); // End of the current day
+
+    // Fetch all approved events where the event date is within today's date range
+    const events = await Event.find({
+      date: {
+        $gte: startOfDay, // Events from the start of today
+        $lt: endOfDay, // Until the end of today
+      },
+      status: "pending", // Changed from "pending" to "approved" for ongoing events
+    });
+
+    // Process events to include participant count and details
+    const processedEvents = events.map((event) => {
+      const participantCount = event.participants.length;
+      const participantDetails = event.participants.map((participant) => ({
+        userId: participant.userId,
+        username: participant.username,
+      }));
+
+      return {
+        ...event.toObject(), // Convert Mongoose document to plain object
+        participantCount,
+        participantDetails,
+      };
+    });
+
+    // Calculate total number of participants
+    const totalParticipants = processedEvents.reduce(
+      (total, event) => total + event.participantCount,
+      0
+    );
+
+    // Include totalParticipants in the response
+    res.status(200).json({
+      events: processedEvents,
+      totalParticipants,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching ongoing events",
+      error: error.message,
+    });
+  }
+};
+
+export const joinEvent = async (req, res) => {
+  const { eventId } = req.params; // Get the event ID from URL params
+  const userId = req.userId; // Get userId from the auth middleware
+
+  try {
+    // Fetch the event to check if it exists
+    const event = await Event.findById(eventId).populate("community");
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Fetch the community associated with the event
+    const community = await Community.findById(event.community._id);
+    if (!community) {
+      return res.status(404).json({ message: "Community not found" });
+    }
+
+    // Check if the user is already a member of the community
+    const isMember = community.members.some(
+      (member) => member.userId.toString() === userId.toString()
+    );
+
+    // If the user is not a member, add them to the community
+    if (!isMember) {
+      const user = await User.findById(userId); // Fetch the user's username
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      community.members.push({
+        userId: user._id,
+        username: user.username,
+      });
+
+      await community.save(); // Save the updated community
+    }
+
+    // Check if the user has already joined the event
+    const hasJoined = event.participants.some(
+      (participant) => participant.userId.toString() === userId.toString()
+    );
+
+    if (hasJoined) {
+      return res
+        .status(400)
+        .json({ message: "User has already joined this event" });
+    }
+
+    // Add the user to the event participants
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    event.participants.push({
+      userId: user._id,
+      username: user.username,
+    });
+
+    await event.save(); // Save the updated event with new participant
+
+    res.status(200).json({ message: "Successfully joined the event!" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+export const getEnrolledEvents = async (req, res) => {
+  try {
+    const userId = req.userId; // Get userId from auth middleware
+    const events = await Event.find({
+      "participants.userId": userId,
+      status: "pending",
+    });
+
+    if (!events.length) {
+      return res.status(404).json({ message: "No enrolled events found" });
+    }
+
+    res.status(200).json(events);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching enrolled events",
+      error: error.message,
+    });
+  }
+};
+
 export const createEvent = async (req, res) => {
-  const { title, description, communityId } = req.body;
+  const { title, description, communityId, date } = req.body;
   const userId = req.userId; // Get userId from auth middleware
   const file = req.file; // Assuming the image is passed via multipart/form-data
   console.log(title);
@@ -244,8 +426,11 @@ export const createEvent = async (req, res) => {
         userId,
         username: user.username,
       },
+      date: new Date(date), // Store the event date
+
       status: "pending", // Set status to 'pending' by default
       imageUrl: imageUrl, // Save the image URL to the event, if provided by the user
+      participants: [], // Initialize participants as an empty array
     });
 
     await newEvent.save();
