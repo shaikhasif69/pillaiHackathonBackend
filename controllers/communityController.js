@@ -408,17 +408,15 @@ export const updateCommunity = async (req, res) => {
   const { communityId } = req.params; // Get community ID from request parameters
   console.log("Community ID from params:", communityId);
 
-  // Check if communityId is a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(communityId)) {
     return res.status(400).json({ message: "Invalid community ID" });
   }
 
-  const { name, description } = req.body; // Get updated name and description from request body
+  const { name, description } = req.body; // Get updated fields from request body
   const userId = req.userId; // Get userId from auth middleware
   const file = req.file; // Get the uploaded image file (if any)
 
   try {
-    // Find the community by ID
     const community = await Community.findById(communityId);
     console.log("Community found:", community);
 
@@ -426,26 +424,22 @@ export const updateCommunity = async (req, res) => {
       return res.status(404).json({ message: "Community not found" });
     }
 
-    // Check if the current user is the creator of the community
     if (community.creator.userId.toString() !== userId) {
       return res
         .status(403)
         .json({ message: "You are not authorized to update this community" });
     }
 
-    // Update the community fields
     if (name) community.name = name;
     if (description) community.description = description;
 
-    // Handle image upload if a file is provided
     if (file) {
-      // Upload image directly to Cloudinary
       const uploadResult = await new Promise((resolve, reject) => {
         cloudinary.v2.uploader
           .upload_stream(
             {
               folder: "community_images",
-              resource_type: "auto", // Automatically detect the file type
+              resource_type: "auto",
             },
             (error, result) => {
               if (error) {
@@ -455,16 +449,14 @@ export const updateCommunity = async (req, res) => {
               }
             }
           )
-          .end(file.buffer); // Pass the buffer to Cloudinary
+          .end(file.buffer);
       });
 
-      community.imageUrl = uploadResult.secure_url; // Update the image URL
+      community.imageUrl = uploadResult.secure_url;
     }
 
-    // Save the updated community
-    await community.save();
+    await community.save(); // Save changes to the database
 
-    // Send the updated community data
     res.status(200).json(community);
   } catch (error) {
     res
@@ -472,6 +464,7 @@ export const updateCommunity = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+
 export const deleteCommunity = async (req, res) => {
   const { communityId } = req.params; // Get community ID from request parameters
   const userId = req.userId; // Get userId from auth middleware

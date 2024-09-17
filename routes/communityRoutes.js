@@ -57,7 +57,7 @@ communityRouter.get(
   getApprovedEvents
 ); // Get approved events for a community
 
-communityRouter.put(
+communityRouter.patch(
   "/update-community/:communityId",
   auth,
   upload.single("image"),
@@ -71,7 +71,7 @@ communityRouter.get("/getPosts", auth, getUserFeed);
 
 // WRITE POST  CRUD  ROUTES
 communityRouter.post("/createPost", auth, upload.single("image"), writePost);
-communityRouter.put("/updatePost", auth, upload.single("image"), updatePost);
+communityRouter.patch("/updatePost", auth, upload.single("image"), updatePost);
 communityRouter.delete("/deletePost", auth, deletePost);
 
 // SPECIFIC ROUTES
