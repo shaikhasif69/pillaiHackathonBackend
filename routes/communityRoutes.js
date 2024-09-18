@@ -20,6 +20,7 @@ import {
   joinCommunity,
   joinEvent,
   listCommunities,
+  listCommunitiesMembers,
   updateCommunity,
   updateEvent,
 } from "./../controllers/communityController.js";
@@ -43,7 +44,11 @@ communityRouter.post(
   createCommunity
 );
 communityRouter.post("/approve-community", auth, approveCommunity);
-communityRouter.get("/pending-community-approval", auth, getPendingCommunities);
+communityRouter.post("/approve-community", auth, approveCommunity);
+communityRouter.get(
+  "/getCommunityMembers/:commmunityId",
+  listCommunitiesMembers
+);
 
 communityRouter.get("/get-community", auth, getUserCommunities);
 communityRouter.get("/getupcoming", getUpcomingEvents);
