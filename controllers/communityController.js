@@ -869,6 +869,40 @@ export const listCommunities = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const listCommunitiesMembers = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query; // Default page is 1, limit is 10 communities per page
+  const { commmunityId } = req.params;
+  try {
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    // Retrieve communities with pagination
+    const communities = await Community.findById(commmunityId)
+      .select("name description creator createdAt  members")
+      .skip(skip)
+      .limit(parseInt(limit)); // Adjust the fields as needed
+
+    // Get the total count of communities for pagination info
+    const total = await Community.countDocuments();
+
+    // Check if there are no communities
+    if (communities.length === 0) {
+      return res.status(404).json({ message: "No communities found" });
+    }
+
+    // Return the list of communities with pagination info
+    res.status(200).json({
+      // total, // Total number of communities
+      // page: parseInt(page), // Current page
+      // totalPages: Math.ceil(total / limit), // Total pages based on limit
+      communities, // Communities for the current page
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
 export const getTrendingTags = async (req, res) => {
   try {
     const trendingTags = await Tag.find().sort({ usageCount: -1 }).limit(10); // Get top 10 tags
