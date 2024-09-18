@@ -19,7 +19,6 @@ const SECRET = "PILLAI";
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
 app.use(express.json());
 connectDB();
@@ -78,6 +77,12 @@ export const getFaculty = async (req, res) => {
 };
 app.get("/faculty", getFaculty);
 // Socket.io middleware and connection
+const io = new Server(server, {
+  cors: {
+    origin: "http://192.168.0.106:3000", // Replace with your frontend URL
+    methods: ["GET", "POST"],
+  },
+});
 io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
   console.log(token);
