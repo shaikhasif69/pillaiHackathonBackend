@@ -19,6 +19,7 @@ import {
   getUserCreatedEvents,
   joinCommunity,
   joinEvent,
+  leaveCommunity,
   listCommunities,
   listCommunitiesMembers,
   updateCommunity,
@@ -85,6 +86,7 @@ communityRouter.patch(
 );
 communityRouter.delete("/delete-community/:communityId", auth, deleteCommunity);
 communityRouter.post("/join-community", auth, joinCommunity);
+communityRouter.delete("/leave-community", auth, leaveCommunity);
 communityRouter.get("/communityPost/:communityId", getPostsByCommunity);
 communityRouter.delete("/deletePost", auth, deletePost); //ADMIN CAN DELETE USER POST tOOO
 communityRouter.get("/getPosts", auth, getUserFeed);

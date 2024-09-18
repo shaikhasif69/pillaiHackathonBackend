@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const postSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
+    // required: true,
   },
   content: {
     type: String,
@@ -58,6 +58,8 @@ const communitySchema = new mongoose.Schema({
     },
   ],
   posts: [postSchema],
+  default: [], // Add this to avoid validation errors when no posts are present
+
   createdAt: {
     type: Date,
     default: Date.now,

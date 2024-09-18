@@ -755,6 +755,41 @@ export const joinCommunity = async (req, res) => {
     res.status(500).json({ message: "Something went wrong" });
   }
 };
+export const leaveCommunity = async (req, res) => {
+  const { communityId } = req.body; // The community the user wants to leave
+  const userId = req.userId; // Get userId from auth middleware
+
+  try {
+    const community = await Community.findById(communityId);
+
+    if (!community) {
+      return res.status(404).json({ message: "Community not found" });
+    }
+
+    // Check if the user is a member of the community
+    const isMember = community.members.some((member) =>
+      member.userId.equals(userId)
+    );
+    if (!isMember) {
+      return res
+        .status(400)
+        .json({ message: "User is not a member of the community" });
+    }
+
+    // Remove the user from the community members array
+    community.members = community.members.filter(
+      (member) => !member.userId.equals(userId)
+    );
+
+    await community.save();
+
+    res.status(200).json({ message: "Left the community successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
 export const getPostsByCommunity = async (req, res) => {
   const { communityId } = req.params;
 
@@ -878,19 +913,24 @@ export const listCommunitiesMembers = async (req, res) => {
 
     // Retrieve communities with pagination
     const communities = await Community.findById(commmunityId)
-      .select("name description creator createdAt  members")
+      .select("name description creator createdAt  ")
+      .populate({
+        path: "members.userId", // Populate member user details
+        select: "username imageUrl", // Include username and imageUrl of the members
+      })
       .skip(skip)
       .limit(parseInt(limit)); // Adjust the fields as needed
 
     // Get the total count of communities for pagination info
     const total = await Community.countDocuments();
-
     // Check if there are no communities
     if (communities.length === 0) {
       return res.status(404).json({ message: "No communities found" });
     }
 
     // Return the list of communities with pagination info
+    const totalMembers = communities.members.length;
+
     res.status(200).json({
       // total, // Total number of communities
       // page: parseInt(page), // Current page
