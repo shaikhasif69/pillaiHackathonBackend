@@ -76,12 +76,23 @@ export const getFaculty = async (req, res) => {
 };
 app.get("/faculty", getFaculty);
 // Socket.io middleware and connection
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
   if (token) {
     try {
       const decoded = jwt.verify(token, SECRET);
       socket.userId = decoded.id;
+
+      // Fetch user details from the User model
+      const user = await User.findById(decoded.id).select("username imageUrl");
+      if (!user) {
+        return next(new Error("User not found"));
+      }
+
+      // Attach username and profileImage to the socket
+      socket.username = user.username;
+      socket.profileImage = user.imageUrl;
+
       next();
     } catch (error) {
       console.error("Authentication error:", error);
