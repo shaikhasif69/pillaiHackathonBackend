@@ -5,7 +5,7 @@ import Tag from "../models/trending.js";
 import User from "../models/user.js"; // Import the User model
 import mongoose from "mongoose";
 export const writePost = async (req, res) => {
-  const { communityId, content, tags } = req.body; // Accept tags in the request body
+  const { communityId, title, content, tags } = req.body; // Accept tags in the request body
   const file = req.file; // Get the uploaded image file (if any)
   console.log(req.userId);
   console.log("coom", communityId);
@@ -80,6 +80,7 @@ export const writePost = async (req, res) => {
 
     // Create a new post with author's name, tags, and image URL
     const newPost = {
+      title,
       content,
       author: {
         id: req.userId,
