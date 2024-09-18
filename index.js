@@ -23,7 +23,7 @@ app.use(express.json());
 connectDB();
 
 app.use("/users", userRouter);
-app.use(express.static('public'))
+app.use(express.static("public"));
 
 app.set("views", "views");
 app.set("view engine", "ejs");
@@ -34,6 +34,9 @@ app.get("/", (req, res) => {
   res.send(
     `aai ghala changes adhich sangat java  mala 18 parent backend end krycha aahe m on a mission to find a  girl`
   );
+});
+app.get("/dash", (req, res) => {
+  res.render("index"); // Render the "index.ejs" template
 });
 export const getFaculty = async (req, res) => {
   try {

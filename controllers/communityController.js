@@ -6,7 +6,12 @@ import Tag from "../models/trending.js";
 import User from "../models/user.js"; // Import the User model
 import mongoose from "mongoose";
 export const createCommunity = async (req, res) => {
-  const { name, description, facultyEmail } = req.body;
+  const {
+    name,
+    description,
+    facultyEmail,
+    category, // Save the category
+  } = req.body;
   const userId = req.userId; // Get userId from auth middleware
   const file = req.file; // Assuming the image is passed via multipart/form-data
 
@@ -63,6 +68,8 @@ export const createCommunity = async (req, res) => {
     const newCommunity = new Community({
       name,
       description,
+      category, // Save the category
+
       creator: {
         userId,
         username: user.username,
@@ -726,7 +733,7 @@ export const deleteCommunity = async (req, res) => {
 };
 
 export const joinCommunity = async (req, res) => {
-  const { communityId } = req.body;
+  const { communityId } = req.params;
   const userId = req.userId; // Get userId from auth middleware
 
   try {

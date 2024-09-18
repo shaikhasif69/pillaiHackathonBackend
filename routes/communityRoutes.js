@@ -85,7 +85,7 @@ communityRouter.patch(
   updateCommunity
 );
 communityRouter.delete("/delete-community/:communityId", auth, deleteCommunity);
-communityRouter.post("/join-community", auth, joinCommunity);
+communityRouter.post("/join-community:communityId", auth, joinCommunity);
 communityRouter.delete("/leave-community", auth, leaveCommunity);
 communityRouter.get("/communityPost/:communityId", getPostsByCommunity);
 communityRouter.delete("/deletePost", auth, deletePost); //ADMIN CAN DELETE USER POST tOOO
