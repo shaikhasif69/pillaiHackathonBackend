@@ -913,7 +913,11 @@ export const listCommunitiesMembers = async (req, res) => {
 
     // Retrieve communities with pagination
     const communities = await Community.findById(commmunityId)
-      .select("name description creator createdAt  members")
+      .select("name description creator createdAt  ")
+      .populate({
+        path: "members.userId", // Populate member user details
+        select: "username imageUrl", // Include username and imageUrl of the members
+      })
       .skip(skip)
       .limit(parseInt(limit)); // Adjust the fields as needed
 
