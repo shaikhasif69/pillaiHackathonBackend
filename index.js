@@ -8,7 +8,7 @@ import { connectDB } from "./db.js";
 import userRouter from "./routes/userRoutes.js";
 import communityRouter from "./routes/communityRoutes.js";
 import councilRoutes from "./routes/council.js";
-import socketHandler from "./socket.js";
+import { socketHandler } from "./socket.js";
 import { Server } from "socket.io";
 import Faculty from "./models/pillaiFaculty.js";
 import User from "./models/user.js";
@@ -77,41 +77,36 @@ export const getFaculty = async (req, res) => {
 };
 app.get("/faculty", getFaculty);
 // Socket.io middleware and connection
-const io = new Server(server, {
-  cors: {
-    origin: "*", // Replace with your frontend URL
-    methods: ["GET", "POST"],
-  },
-});
-io.use(async (socket, next) => {
-  const token = socket.handshake.auth.token;
-  console.log(token);
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, SECRET);
-      socket.userId = decoded.id;
 
-      // Fetch user details from the User model
-      const user = await User.findById(decoded.id).select("username imageUrl");
-      if (!user) {
-        return next(new Error("User not found"));
-      }
+// io.use(async (socket, next) => {
+//   const token = socket.handshake.auth.token;
+//   console.log(token);
+//   if (token) {
+//     try {
+//       const decoded = jwt.verify(token, SECRET);
+//       socket.userId = decoded.id;
 
-      // Attach username and profileImage to the socket
-      socket.username = user.username;
-      socket.profileImage = user.imageUrl;
+//       // Fetch user details from the User model
+//       const user = await User.findById(decoded.id).select("username imageUrl");
+//       if (!user) {
+//         return next(new Error("User not found"));
+//       }
 
-      next();
-    } catch (error) {
-      console.error("Authentication error:", error);
-      return next(new Error("Authentication error"));
-    }
-  } else {
-    next(new Error("No token provided"));
-  }
-});
+//       // Attach username and profileImage to the socket
+//       socket.username = user.username;
+//       socket.profileImage = user.imageUrl;
 
-socketHandler(io);
+//       next();
+//     } catch (error) {
+//       console.error("Authentication error:", error);
+//       return next(new Error("Authentication error"));
+//     }
+//   } else {
+//     next(new Error("No token provided"));
+//   }
+// });
+
+socketHandler(server);
 server.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

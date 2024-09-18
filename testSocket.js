@@ -1,6 +1,6 @@
 import io from "socket.io-client";
 import jwt from "jsonwebtoken";
-const token = jwt.sign({ id: "66e698656ffd530f47532f6f" }, "PILLAI");
+const token = jwt.sign({ id: "66e6926336455070e72e4bcb" }, "PILLAI");
 
 // Connect to the socket server with the token
 console.log("tok", token);
@@ -11,7 +11,7 @@ const socket = io("http://localhost:3000", {
 });
 
 // Join a tag in a community
-socket.emit("joinTag", { communityId: "66eadc1132292973ba14a4b1", tag: "wwe" });
+socket.emit("joinTag", { communityId: "66e698f76ffd530f47532f76", tag: "wwe" });
 
 // Listen for previous messages
 socket.on("previousMessages", (messages) => {
