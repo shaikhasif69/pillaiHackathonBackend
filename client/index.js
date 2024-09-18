@@ -4,6 +4,7 @@ const socket = io("http://localhost:3000");
 
 // Join a group
 socket.emit("joinGroup", "66e832963424a23fa2b78ed7");
+socket.on("jointag", "", "");
 
 // Send a message
 socket.emit("sendMessage", {
