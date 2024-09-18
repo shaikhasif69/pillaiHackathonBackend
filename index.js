@@ -13,6 +13,8 @@ import { Server } from "socket.io";
 import Faculty from "./models/pillaiFaculty.js";
 import User from "./models/user.js";
 import adminRouter from "./routes/admin.js";
+import jwt from "jsonwebtoken";
+
 const SECRET = "PILLAI";
 
 const app = express();
@@ -78,6 +80,7 @@ app.get("/faculty", getFaculty);
 // Socket.io middleware and connection
 io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
+  console.log(token);
   if (token) {
     try {
       const decoded = jwt.verify(token, SECRET);
