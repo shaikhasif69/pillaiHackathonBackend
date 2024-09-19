@@ -761,6 +761,35 @@ export const joinCommunity = async (req, res) => {
     res.status(500).json({ message: "Something went wrong" });
   }
 };
+export const listCommunitiesNotJoined = async (req, res) => {
+  const userId = req.userId; // Get userId from auth middleware
+
+  try {
+    // Fetch all communities
+    const allCommunities = await Community.find();
+
+    // Fetch the user's communities
+    const userCommunities = await Community.find({
+      "members.userId": userId,
+    });
+
+    // Extract the IDs of communities the user is a member of
+    const userCommunityIds = userCommunities.map((community) =>
+      community._id.toString()
+    );
+
+    // Filter out communities the user is a member of
+    const communitiesNotJoined = allCommunities.filter(
+      (community) => !userCommunityIds.includes(community._id.toString())
+    );
+
+    res.status(200).json(communitiesNotJoined);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
 export const getJoinedCommunities = async (req, res) => {
   const userId = req.userId; // Get userId from the auth middleware
 

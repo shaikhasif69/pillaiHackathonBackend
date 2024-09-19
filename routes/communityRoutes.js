@@ -23,6 +23,7 @@ import {
   leaveCommunity,
   listCommunities,
   listCommunitiesMembers,
+  listCommunitiesNotJoined,
   updateCommunity,
   updateEvent,
 } from "./../controllers/communityController.js";
@@ -88,6 +89,7 @@ communityRouter.patch(
 );
 communityRouter.delete("/delete-community/:communityId", auth, deleteCommunity);
 communityRouter.post("/join-community/:communityId", auth, joinCommunity);
+communityRouter.get("/not-joined-community", auth, listCommunitiesNotJoined);
 communityRouter.get("/getJoined-community", auth, getJoinedCommunities);
 communityRouter.delete("/leave-community", auth, leaveCommunity);
 communityRouter.get("/communityPost/:communityId", getPostsByCommunity);

@@ -17,6 +17,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "", // default placeholder image URL
   },
+  groups: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "studentGroup",
+    },
+  ],
 });
 
 const User = mongoose.model("User", userSchema);
