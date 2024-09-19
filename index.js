@@ -13,6 +13,8 @@ import { Server } from "socket.io";
 import Faculty from "./models/pillaiFaculty.js";
 import User from "./models/user.js";
 import adminRouter from "./routes/admin.js";
+import jwt from "jsonwebtoken";
+
 const SECRET = "PILLAI";
 
 const app = express();
@@ -23,7 +25,7 @@ app.use(express.json());
 connectDB();
 
 app.use("/users", userRouter);
-app.use(express.static('public'))
+app.use(express.static("public"));
 
 app.set("views", "views");
 app.set("view engine", "ejs");
@@ -34,6 +36,9 @@ app.get("/", (req, res) => {
   res.send(
     `aai ghala changes adhich sangat java  mala 18 parent backend end krycha aahe m on a mission to find a  girl`
   );
+});
+app.get("/dash", (req, res) => {
+  res.render("index"); // Render the "index.ejs" template
 });
 export const getFaculty = async (req, res) => {
   try {
@@ -73,12 +78,24 @@ export const getFaculty = async (req, res) => {
 };
 app.get("/faculty", getFaculty);
 // Socket.io middleware and connection
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
+  console.log(token);
   if (token) {
     try {
       const decoded = jwt.verify(token, SECRET);
       socket.userId = decoded.id;
+
+      // Fetch user details from the User model
+      const user = await User.findById(decoded.id).select("username imageUrl");
+      if (!user) {
+        return next(new Error("User not found"));
+      }
+
+      // Attach username and profileImage to the socket
+      socket.username = user.username;
+      socket.profileImage = user.imageUrl;
+
       next();
     } catch (error) {
       console.error("Authentication error:", error);

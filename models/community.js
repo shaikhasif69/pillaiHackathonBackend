@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const postSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    // required: true,
+  },
   content: {
     type: String,
     required: true,
@@ -54,6 +58,7 @@ const communitySchema = new mongoose.Schema({
     },
   ],
   posts: [postSchema],
+
   createdAt: {
     type: Date,
     default: Date.now,
@@ -72,6 +77,36 @@ const communitySchema = new mongoose.Schema({
   imageUrl: {
     type: String, // URL to the image stored on Cloudinary
     required: false,
+  },
+  category: {
+    type: [String], // Array of strings for multiple categories (you can change it to String if only one category is allowed)
+    enum: [
+      "sports",
+      "technology",
+      "music",
+      "art",
+      "photography",
+      "coding",
+      "artifical intelligence",
+      "python",
+      "web development",
+      "javascript",
+      "cybersecurity",
+      "ethical hacking",
+      "design",
+      "game development",
+      "machine learning",
+      "algorithms",
+      "data science",
+      "gaming",
+      "multiplayer",
+      "battle royale",
+      "photography",
+      "visual art",
+      "media",
+    ], // Add predefined categories
+
+    required: true, // Set this as required if every community should have a category
   },
   facultyId: {
     type: mongoose.Schema.Types.ObjectId,

@@ -7,13 +7,21 @@ import {
   createEvent,
   deleteCommunity,
   deleteEvent,
+  getAllEvents,
+  getEnrolledEvents,
+  getEventsByCommunity,
+  getOngoingEvents,
   getPendingCommunities,
   getPostsByCommunity,
   getTrendingTags,
+  getUpcomingEvents,
   getUserCommunities,
   getUserCreatedEvents,
   joinCommunity,
+  joinEvent,
+  leaveCommunity,
   listCommunities,
+  listCommunitiesMembers,
   updateCommunity,
   updateEvent,
 } from "./../controllers/communityController.js";
@@ -37,8 +45,17 @@ communityRouter.post(
   createCommunity
 );
 communityRouter.post("/approve-community", auth, approveCommunity);
-communityRouter.get("/pending-community-approval", auth, getPendingCommunities);
+communityRouter.post("/approve-community", auth, approveCommunity);
+communityRouter.get(
+  "/getCommunityMembers/:commmunityId",
+  listCommunitiesMembers
+);
 
+communityRouter.get("/get-community", auth, getUserCommunities);
+communityRouter.get("/getupcoming", getUpcomingEvents);
+communityRouter.get("/getongoing", getOngoingEvents);
+communityRouter.post("/joinEvent/:eventId", auth, joinEvent);
+communityRouter.get("/enrolled-event", auth, getEnrolledEvents);
 communityRouter.get("/get-community", auth, getUserCommunities);
 
 // EVENTS Routes
@@ -51,7 +68,9 @@ communityRouter.put(
 ); // update an event
 communityRouter.delete("/delete-event/:eventId", auth, deleteEvent); // update an event
 communityRouter.post("/events/approve", auth, approveEvent); // Approve an event
-communityRouter.get("/getAdminEvents", auth, getUserCreatedEvents); // Approve an event
+communityRouter.get("/getUserEvents", auth, getUserCreatedEvents); // Approve an event
+communityRouter.get("/getCommunityEvents/:communityId", getEventsByCommunity); // Approve an event
+communityRouter.get("/getAllEvents", getAllEvents); // Approve an event
 
 communityRouter.get(
   "/communities/:communityId/events",
@@ -66,7 +85,8 @@ communityRouter.patch(
   updateCommunity
 );
 communityRouter.delete("/delete-community/:communityId", auth, deleteCommunity);
-communityRouter.post("/join-community", auth, joinCommunity);
+communityRouter.post("/join-community:communityId", auth, joinCommunity);
+communityRouter.delete("/leave-community", auth, leaveCommunity);
 communityRouter.get("/communityPost/:communityId", getPostsByCommunity);
 communityRouter.delete("/deletePost", auth, deletePost); //ADMIN CAN DELETE USER POST tOOO
 communityRouter.get("/getPosts", auth, getUserFeed);

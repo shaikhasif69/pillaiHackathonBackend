@@ -59,7 +59,7 @@ export const signup = async (req, res) => {
 export const signin = async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("data i am getting: " + email + " " + password)
+  console.log("data i am getting: " + email + " " + password);
 
   try {
     const existingUser = await userModel.findOne({ email: email });
@@ -193,6 +193,8 @@ export const getUserProfile = async (req, res) => {
     // Check if the user is a faculty member
     const faculty = await Faculty.findOne({ email: user.email });
     let facultyDetails = null;
+    let studentDetails = null;
+    const student = await Student.findOne({ email: user.email });
 
     if (faculty) {
       facultyDetails = {
@@ -203,6 +205,14 @@ export const getUserProfile = async (req, res) => {
         profession: faculty.profession,
       };
     }
+    if (student) {
+      studentDetails = {
+        address: student.address,
+        department: student.department,
+        year: student.year,
+        handicapped: student.handicapped,
+      };
+    }
 
     // Return the user's profile information along with associated data
     res.status(200).json({
@@ -210,6 +220,7 @@ export const getUserProfile = async (req, res) => {
       email: user.email,
       imageUrl: user.imageUrl,
       facultyDetails, // This will be null if not a faculty member
+      studentDetails, // This will be null if not a student
       posts,
       communitiesCreated,
       communitiesJoined,
