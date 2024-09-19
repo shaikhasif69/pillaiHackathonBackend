@@ -22,6 +22,15 @@ const studentData = [
   },
 
   {
+    email: "psai23comp@student.mes.ac.in",
+    name: "Sai",
+    department: "Computer Engineering",
+    year: "3rd Year",
+    address: "Mumbai, India",
+    handicapped: false,
+  },
+
+  {
     email: "maadarsh23comp@student.mes.ac.in",
     name: "Adarsh M.",
     department: "Computer Engineering",
