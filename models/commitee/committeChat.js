@@ -43,6 +43,11 @@ const messageSchema = new mongoose.Schema({
   roomId: { type: String, required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   username: { type: String, required: true },
+  imageUrl: {
+    type: String,
+    default: "",
+  },
+
   content: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });

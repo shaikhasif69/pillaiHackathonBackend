@@ -42,6 +42,7 @@ export const socketHandler = (server) => {
         roomId,
         userId,
         username: user.username,
+        imageUrl: user.imageUrl,
         content,
         createdAt: new Date(),
       });
