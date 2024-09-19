@@ -35,6 +35,7 @@ import {
   writePost,
 } from "../controllers/postController.js";
 import upload from "../helpers/multer.js";
+import { getPreviousMessages } from "../controllers/council/groupController.js";
 
 const communityRouter = express.Router();
 //  community Routes
@@ -57,7 +58,7 @@ communityRouter.get("/getongoing", getOngoingEvents);
 communityRouter.post("/joinEvent/:eventId", auth, joinEvent);
 communityRouter.get("/enrolled-event", auth, getEnrolledEvents);
 communityRouter.get("/get-community", auth, getUserCommunities);
-
+communityRouter.get("/get-prevMessage/:roomId", getPreviousMessages);
 // EVENTS Routes
 communityRouter.post("/events", auth, upload.single("image"), createEvent); // Create an event
 communityRouter.put(

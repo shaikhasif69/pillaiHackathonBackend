@@ -37,3 +37,23 @@ export const getTopUpvotedMessages = async (req, res) => {
     });
   }
 };
+
+export const getPreviousMessages = async (req, res) => {
+  const { roomId } = req.params;
+
+  try {
+    // Fetch messages from the database based on roomId
+    const messages = await Message.find({ roomId }).sort({ createdAt: 1 });
+
+    // If no messages found, return an empty array
+    if (!messages) {
+      return res.status(404).json({ message: "No messages found" });
+    }
+
+    // Return the messages as a JSON response
+    res.json(messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
