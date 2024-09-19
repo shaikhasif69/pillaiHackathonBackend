@@ -761,6 +761,27 @@ export const joinCommunity = async (req, res) => {
     res.status(500).json({ message: "Something went wrong" });
   }
 };
+export const getJoinedCommunities = async (req, res) => {
+  const userId = req.userId; // Get userId from the auth middleware
+
+  try {
+    // Find communities where the user is a member and include posts
+    const joinedCommunities = await Community.find({ "members.userId": userId })
+      .select("name description imageUrl createdAt status posts")
+      .exec();
+
+    if (!joinedCommunities.length) {
+      return res
+        .status(404)
+        .json({ message: "User has not joined any communities." });
+    }
+
+    res.status(200).json(joinedCommunities);
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
 export const leaveCommunity = async (req, res) => {
   const { communityId } = req.body; // The community the user wants to leave
   const userId = req.userId; // Get userId from auth middleware

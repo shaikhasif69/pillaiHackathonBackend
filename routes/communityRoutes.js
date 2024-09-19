@@ -10,6 +10,7 @@ import {
   getAllEvents,
   getEnrolledEvents,
   getEventsByCommunity,
+  getJoinedCommunities,
   getOngoingEvents,
   getPendingCommunities,
   getPostsByCommunity,
@@ -87,6 +88,7 @@ communityRouter.patch(
 );
 communityRouter.delete("/delete-community/:communityId", auth, deleteCommunity);
 communityRouter.post("/join-community/:communityId", auth, joinCommunity);
+communityRouter.get("/getJoined-community", auth, getJoinedCommunities);
 communityRouter.delete("/leave-community", auth, leaveCommunity);
 communityRouter.get("/communityPost/:communityId", getPostsByCommunity);
 communityRouter.delete("/deletePost", auth, deletePost); //ADMIN CAN DELETE USER POST tOOO
