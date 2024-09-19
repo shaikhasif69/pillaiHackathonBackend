@@ -883,13 +883,14 @@ export const listCommunities = async (req, res) => {
 
   try {
     // Calculate the number of documents to skip
-    const skip = (page - 1) * limit;
+    // const skip = (page - 1) * limit;
 
     // Retrieve communities with pagination
-    const communities = await Community.find()
-      .select("name description creator createdAt, imageUrl status")
-      .skip(skip)
-      .limit(parseInt(limit)); // Adjust the fields as needed
+    const communities = await Community.find().select(
+      "name description creator createdAt, imageUrl status"
+    );
+    // .skip(skip)
+    // .limit(parseInt(limit)); // Adjust the fields as needed
 
     // Get the total count of communities for pagination info
     const total = await Community.countDocuments();
@@ -901,9 +902,9 @@ export const listCommunities = async (req, res) => {
 
     // Return the list of communities with pagination info
     res.status(200).json({
-      total, // Total number of communities
-      page: parseInt(page), // Current page
-      totalPages: Math.ceil(total / limit), // Total pages based on limit
+      // total, // Total number of communities
+      // page: parseInt(page), // Current page
+      // totalPages: Math.ceil(total / limit), // Total pages based on limit
       communities, // Communities for the current page
     });
   } catch (error) {
