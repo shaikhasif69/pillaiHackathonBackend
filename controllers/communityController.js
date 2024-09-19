@@ -101,7 +101,6 @@ export const getUserCommunities = async (req, res) => {
         select: "username", // Only select the username
       })
       .exec();
-    const totalMembers = communities.members.length;
     if (!communities.length) {
       return res
         .status(404)
@@ -111,7 +110,6 @@ export const getUserCommunities = async (req, res) => {
     // Transform the response to include the faculty's username
     const response = communities.map((community) => ({
       ...community._doc,
-      members: totalMembers,
       facultyUsername: community.facultyId?.username || null, // Add faculty username or null if not available
     }));
 
