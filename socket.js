@@ -20,7 +20,7 @@ export const socketHandler = (server) => {
 
       const user = await User.findById(userId); // Get user info (e.g., username)
       if (!user) return socket.emit("error", "User not found");
-
+      console.log(user.imageUrl);
       socket.join(roomId);
       console.log(`${user.username} joined room: ${roomId}`);
 
@@ -44,11 +44,12 @@ export const socketHandler = (server) => {
         username: user.username,
         imageUrl: user.imageUrl,
         content,
+        discussion: true,
         createdAt: new Date(),
       });
 
       await newMessage.save(); // Save message to database
-
+      console.log(newMessage);
       // Broadcast the message to the room
       io.to(roomId).emit("message", newMessage);
     });

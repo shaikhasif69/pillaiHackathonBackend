@@ -1,5 +1,5 @@
 import Group from "../../models/council/groupSchema.js";
-import Message from "./../../models/council/message.js";
+import Message from "./../../models/commitee/committeChat.js";
 
 export const getUserGroups = async (req, res) => {
   try {
