@@ -32,27 +32,54 @@ export const socketHandler = (server) => {
       // Notify other users in the room
       socket.to(roomId).emit("userJoined", `${user.username} joined the room`);
     });
+    socket.on("1v1chat", async ({ userId, targetUserId }) => {
+      console.log("1v1chat event received");
 
-    // Listen for new messages
-    socket.on("message", async ({ roomId, userId, content }) => {
       const user = await User.findById(userId);
-      if (!user) return socket.emit("error", "User not found");
+      const targetUser = await User.findById(targetUserId);
 
-      const newMessage = new Message({
-        roomId,
-        userId,
-        username: user.username,
-        imageUrl: user.imageUrl,
-        content,
-        discussion: true,
-        createdAt: new Date(),
+      if (!user || !targetUser) return socket.emit("error", "User not found");
+
+      // Generate a unique room ID for the 1v1 chat
+      const roomId = [userId, targetUserId].sort().join("_");
+
+      socket.join(roomId);
+      console.log(`${user.username} joined room: ${roomId}`);
+
+      // Fetch previous messages for the 1v1 chat
+      const previousMessages = await Message.find({ roomId }).sort({
+        createdAt: 1,
       });
+      socket.emit("previousMessages", previousMessages);
 
-      await newMessage.save(); // Save message to database
-      console.log(newMessage);
-      // Broadcast the message to the room
-      io.to(roomId).emit("message", newMessage);
+      // Notify the other user in the room
+      socket.to(roomId).emit("userJoined", `${user.username} joined the room`);
     });
+
+    // Single listener for all messages (group or 1v1)
+    socket.on(
+      "message",
+      async ({ roomId, userId, content, discussion = true }) => {
+        const user = await User.findById(userId);
+        if (!user) return socket.emit("error", "User not found");
+
+        const newMessage = new Message({
+          roomId,
+          userId,
+          username: user.username,
+          imageUrl: user.imageUrl,
+          content,
+          discussion, // False for private messages, true for group discussions
+          createdAt: new Date(),
+        });
+
+        await newMessage.save(); // Save the message to the database
+        console.log(newMessage);
+
+        // Broadcast the message to the room
+        io.to(roomId).emit("message", newMessage);
+      }
+    );
 
     socket.on("disconnect", () => {
       console.log("User disconnected");
