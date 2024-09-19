@@ -766,7 +766,7 @@ export const getJoinedCommunities = async (req, res) => {
 
   try {
     // Find communities where the user is a member and include posts and their tags
-    const joinedCommunities = await Community.find({ "members.userId": userId })
+    let joinedCommunities = await Community.find({ "members.userId": userId })
       .select("name description imageUrl createdAt status posts creator") // Include creator
       .populate({
         path: "posts.tags", // Populate the tags inside the posts
@@ -783,6 +783,14 @@ export const getJoinedCommunities = async (req, res) => {
         .status(404)
         .json({ message: "User has not joined any communities." });
     }
+
+    // Modify the response to remove the extra _id field inside creator.userId
+    joinedCommunities = joinedCommunities.map((community) => {
+      if (community.creator && community.creator.userId) {
+        community.creator.userId = community.creator.userId._id; // Set userId to the value of _id
+      }
+      return community;
+    });
 
     res.status(200).json(joinedCommunities);
   } catch (error) {
