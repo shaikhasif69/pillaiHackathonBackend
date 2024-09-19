@@ -767,10 +767,14 @@ export const getJoinedCommunities = async (req, res) => {
   try {
     // Find communities where the user is a member and include posts and their tags
     const joinedCommunities = await Community.find({ "members.userId": userId })
-      .select("name description imageUrl createdAt status posts")
+      .select("name description imageUrl createdAt status posts creator") // Include creator
       .populate({
         path: "posts.tags", // Populate the tags inside the posts
         select: "name", // Only return the 'name' field of the tags
+      })
+      .populate({
+        path: "creator.userId", // Populate the creator's userId from the User model
+        select: "username", // Get the username of the creator
       })
       .exec();
 
