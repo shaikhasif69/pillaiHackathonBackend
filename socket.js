@@ -1,273 +1,214 @@
-import Chat from "./models/commitee/committeChat.js";
-import Community from "./models/community.js";
-import Group from "./models/council/groupSchema.js";
-import Message from "./models/council/message.js";
+import { Server } from "socket.io";
 import User from "./models/user.js";
+import Message from "./models/commitee/committeChat.js";
+import Group from "./models/studentForum/studentGroup.js";
+import Message1 from "./models/studentForum/studentMessage.js";
 
-const socketHandler = (io) => {
-  // io.on("connection", (socket) => {
-  //   console.log(`User connected: ${socket.userId}`);
+export const socketHandler = (server) => {
+  const io = new Server(server, {
+    cors: {
+      origin: "*", // Replace with your frontend's URL
+      methods: ["GET", "POST"], // Specify the HTTP methods allowed
+      credentials: true, // Allow credentials like cookies
+    },
+  });
+
   io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.userId}`);
-
-    // Join a specific community and tag (room)
-    socket.on("joinTag", async ({ communityId, tag }) => {
-      // Verify if the user is part of the community
-      const community = await Community.findById(communityId);
-      const isMember = community.members.some(
-        (member) => member.userId.toString() === socket.userId.toString()
-      );
-
-      if (isMember) {
-        // Join the specific tag chat room
-        socket.join(`${communityId}-${tag}`);
-        console.log(
-          `User ${socket.userId} joined tag #${tag} in community ${communityId}`
-        );
-
-        // Fetch previous messages for the chat room
-        const chat = await Chat.findOne({ communityId, tag });
-        if (chat) {
-          socket.emit("previousMessages", chat.messages);
+    console.log("A user connected");
+    socket.on("joinstudentGroup", async ({ groupId, userId }) => {
+      try {
+        const group = await Group.findById(groupId);
+        if (!group.members.includes(userId)) {
+          group.members.push(userId);
+          await group.save();
         }
-      } else {
-        socket.emit(
-          "error",
-          "You must be a member of the community to join this chat."
+        socket.join(groupId);
+        io.to(groupId).emit("userJoined", { userId, groupId });
+
+        // Fetch previous messages with user details populated
+        const messages = await Message1.find({ group: groupId })
+          .populate("user", "username imageUrl") // Ensure user details are populated
+          .sort({ createdAt: 1 });
+
+        console.log(messages); // Log the messages to check if user details are populated
+
+        // Emit previous messages with full user details to the newly joined user
+        socket.emit("previousMessages", messages);
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    // Handle group message
+    socket.on("sendMessage", async ({ groupId, userId, content }) => {
+      try {
+        // Fetch the user details (including username)
+        const user = await User.findById(userId);
+        if (!user) {
+          return socket.emit("error", { message: "User not found." });
+        }
+
+        // Create a new message with userId and content
+        const message = new Message1({
+          group: groupId,
+          user: userId,
+          username: user.username,
+          profileImage: user.imageUrl, // Include the user's profile image if needed
+          content,
+          upvotes: 0, // Initialize upvotes
+          downvotes: 0, //
+        });
+        await message.save();
+
+        // Add the message to the group
+        const group = await Group.findById(groupId);
+        group.messages.push(message._id);
+        await group.save();
+
+        // Emit the message with the user's username and profile image (if needed)
+        io.to(groupId).emit("newMessage", {
+          messageId: message._id,
+          groupId: groupId,
+          userId: userId,
+          username: user.username,
+          profileImage: user.imageUrl, // Include the user's profile image if needed
+          content: message.content,
+          createdAt: message.createdAt,
+          upvotes: message.upvotes, // Ensure these are included
+          downvotes: message.downvotes,
+        });
+      } catch (error) {
+        console.error(error);
+        socket.emit("error", {
+          message: "An error occurred while sending the message.",
+        });
+      }
+    });
+
+    socket.on("voteMessage", async ({ messageId, userId, voteType }) => {
+      try {
+        const message = await Message1.findById(messageId);
+
+        // Check if user has already voted
+        const existingVote = message.voters.find((voter) =>
+          voter.user.equals(userId)
         );
+
+        if (existingVote) {
+          if (existingVote.voteType === voteType) {
+            // User has already cast this vote type, no further action
+            return socket.emit("error", { message: "You have already voted." });
+          } else {
+            // Update the vote if user is changing from upvote to downvote or vice versa
+            if (voteType === "upvote") {
+              message.upvotes += 1;
+              message.downvotes -= 1;
+            } else {
+              message.downvotes += 1;
+              message.upvotes -= 1;
+            }
+            existingVote.voteType = voteType;
+          }
+        } else {
+          // New vote
+          if (voteType === "upvote") {
+            message.upvotes += 1;
+          } else {
+            message.downvotes += 1;
+          }
+          // Add the user and vote type to the voters array
+          message.voters.push({ user: userId, voteType });
+        }
+
+        await message.save();
+
+        // Emit the updated message with all relevant data, including upvotes and downvotes
+        io.to(message.group).emit("messageUpdated", {
+          messageId: message._id,
+          groupId: message.group,
+          userId: message.user,
+          content: message.content,
+          upvotes: message.upvotes,
+          downvotes: message.downvotes,
+          voters: message.voters, // Include voters array if necessary
+          createdAt: message.createdAt,
+        });
+      } catch (error) {
+        console.error(error);
+        socket.emit("error", {
+          message: "An error occurred while processing your vote.",
+        });
       }
     });
+    // Join a room by roomID
+    socket.on("joinRoom", async ({ roomId, userId }) => {
+      console.log("joinRoom event received"); // Log when the event is received
 
-    // Handle sending messages
-    socket.on("sendMessage", async ({ communityId, tag, message }) => {
-      const { userId, username, profileImage } = socket;
+      const user = await User.findById(userId); // Get user info (e.g., username)
+      if (!user) return socket.emit("error", "User not found");
+      console.log(user.imageUrl);
+      socket.join(roomId);
+      console.log(`${user.username} joined room: ${roomId}`);
 
-      let chat = await Chat.findOne({ communityId, tag });
-      if (!chat) {
-        chat = new Chat({ communityId, tag, messages: [] });
-      }
+      // Fetch previous messages for the room
+      const previousMessages = await Message.find({ roomId }).sort({
+        createdAt: 1,
+      });
+      socket.emit("previousMessages", previousMessages);
+      // Notify other users in the room
+      socket.to(roomId).emit("userJoined", `${user.username} joined the room`);
+    });
+    socket.on("1v1chat", async ({ userId, targetUserId }) => {
+      console.log("1v1chat event received");
 
-      const newMessage = {
-        userId,
-        username,
-        profileImage,
-        message,
-      };
+      const user = await User.findById(userId);
+      const targetUser = await User.findById(targetUserId);
 
-      chat.messages.push(newMessage);
-      await chat.save();
+      if (!user || !targetUser) return socket.emit("error", "User not found");
 
-      io.to(`${communityId}-${tag}`).emit("receiveMessage", newMessage);
+      // Generate a unique room ID for the 1v1 chat
+      const roomId = [userId, targetUserId].sort().join("_");
+
+      socket.join(roomId);
+      console.log(`${user.username} joined room: ${roomId}`);
+
+      // Fetch previous messages for the 1v1 chat
+      const previousMessages = await Message.find({ roomId }).sort({
+        createdAt: 1,
+      });
+      socket.emit("previousMessages", previousMessages);
+
+      // Notify the other user in the room
+      socket.to(roomId).emit("userJoined", `${user.username} joined the room`);
     });
 
-    // Handle disconnection
+    // Single listener for all messages (group or 1v1)
+    socket.on(
+      "message",
+      async ({ roomId, userId, content, discussion = true }) => {
+        const user = await User.findById(userId);
+        if (!user) return socket.emit("error", "User not found");
+
+        const newMessage = new Message({
+          roomId,
+          userId,
+          username: user.username,
+          imageUrl: user.imageUrl,
+          content,
+          discussion, // False for private messages, true for group discussions
+          createdAt: new Date(),
+        });
+
+        await newMessage.save(); // Save the message to the database
+        console.log(newMessage);
+
+        // Broadcast the message to the room
+        io.to(roomId).emit("message", newMessage);
+      }
+    );
+
     socket.on("disconnect", () => {
-      console.log(`User disconnected: ${socket.userId}`);
+      console.log("User disconnected");
     });
-    // Handle joining a group
-    //   socket.on("create-group", async ({ groupName }) => {
-    //     try {
-    //       // Check if group name already exists
-    //       const existingGroup = await Group.findOne({ name: groupName });
-    //       if (existingGroup) {
-    //         socket.emit("error", { message: "Group name already exists" });
-    //         return;
-    //       }
-
-    //       // Create new group
-    //       const newGroup = new Group({
-    //         name: groupName,
-    //         members: [socket.userId], // Add the creator as a member
-    //       });
-
-    //       await newGroup.save();
-
-    //       // Join the new group room (Socket.io)
-    //       socket.join(newGroup._id.toString());
-
-    //       socket.emit("group-created", {
-    //         groupId: newGroup._id,
-    //         groupName: newGroup.name,
-    //         message: `Group ${newGroup.name} created successfully`,
-    //       });
-
-    //       console.log(`User ${socket.userId} created group ${newGroup._id}`);
-    //     } catch (error) {
-    //       console.error("Error creating group:", error);
-    //       socket.emit("error", {
-    //         message: "An error occurred while creating the group",
-    //       });
-    //     }
-    //   });
-    //   socket.on("join-group", async ({ groupId }) => {
-    //     try {
-    //       const group = await Group.findById(groupId);
-
-    //       if (!group) {
-    //         socket.emit("error", { message: "Group not found" });
-    //         return;
-    //       }
-
-    //       // Check if the user is already a member of the group
-    //       const isMember = group.users.includes(socket.userId);
-    //       if (!isMember) {
-    //         // Add the user to the group in the database
-    //         group.users.push(socket.userId);
-    //         await group.save();
-    //         console.log(`User ${socket.userId} added to group ${groupId}`);
-    //       }
-
-    //       // Add the user to the group room (Socket.io)
-    //       socket.join(groupId);
-    //       socket.emit("joined-group", {
-    //         groupId,
-    //         message: `Joined group ${group.name}`,
-    //       });
-    //       console.log(`User ${socket.userId} joined group ${groupId} via Socket`);
-    //     } catch (error) {
-    //       console.error("Error joining group:", error);
-    //       socket.emit("error", {
-    //         message: "An error occurred while joining the group",
-    //       });
-    //     }
-    //   });
-
-    //   // Handle sending a group message
-    //   socket.on("group-message", async ({ groupId, message }) => {
-    //     // Ensure the user has joined the group room before sending a message
-    //     const rooms = Array.from(socket.rooms);
-    //     if (!rooms.includes(groupId)) {
-    //       socket.emit("error", {
-    //         message: "You must join the group before sending messages",
-    //       });
-    //       return;
-    //     }
-
-    //     const newMessage = new Message({
-    //       senderId: socket.userId,
-    //       groupId,
-    //       content: message,
-    //       isGroupMessage: true,
-    //     });
-
-    //     await newMessage.save();
-
-    //     // Fetch sender's username from DB
-    //     const sender = await User.findById(socket.userId);
-
-    //     io.to(groupId).emit("new-group-message", {
-    //       senderId: socket.userId,
-    //       senderName: sender.username, // Send the username to the frontend
-    //       message,
-    //     });
-    //   });
-
-    //   // Handle private messages (no change)
-    //   socket.on("private-message", async ({ receiverId, message }) => {
-    //     const newMessage = new Message({
-    //       senderId: socket.userId,
-    //       receiverId,
-    //       content: message,
-    //       isGroupMessage: false,
-    //     });
-    //     await newMessage.save();
-
-    //     const sender = await User.findById(socket.userId);
-
-    //     const roomId = [socket.userId, receiverId].sort().join("-");
-    //     io.to(roomId).emit("new-private-message", {
-    //       senderId: socket.userId,
-    //       senderName: sender.username,
-    //       message,
-    //     });
-    //   });
-    //   socket.on("upvote-message", async ({ messageId }) => {
-    //     try {
-    //       const message = await Message.findById(messageId);
-    //       if (message) {
-    //         message.upvotes += 1;
-    //         await message.save();
-
-    //         // Notify all users in the group of the updated vote count
-    //         if (message.groupId) {
-    //           io.to(message.groupId.toString()).emit("message-vote-update", {
-    //             messageId,
-    //             upvotes: message.upvotes,
-    //             downvotes: message.downvotes,
-    //           });
-    //         }
-    //       }
-    //     } catch (error) {
-    //       console.error("Error upvoting message:", error);
-    //       socket.emit("error", {
-    //         message: "An error occurred while upvoting the message",
-    //       });
-    //     }
-    //   });
-
-    //   // Handle downvoting a message
-    //   socket.on("downvote-message", async ({ messageId }) => {
-    //     try {
-    //       const message = await Message.findById(messageId);
-    //       if (message) {
-    //         message.downvotes += 1;
-    //         await message.save();
-
-    //         // Notify all users in the group of the updated vote count
-    //         if (message.groupId) {
-    //           io.to(message.groupId.toString()).emit("message-vote-update", {
-    //             messageId,
-    //             upvotes: message.upvotes,
-    //             downvotes: message.downvotes,
-    //           });
-    //         }
-    //       }
-    //     } catch (error) {
-    //       console.error("Error downvoting message:", error);
-    //       socket.emit("error", {
-    //         message: "An error occurred while downvoting the message",
-    //       });
-    //     }
-    //   });
-
-    //   // Other socket events...
-    //   socket.on("post-comment", async ({ messageId, comment }) => {
-    //     try {
-    //       const message = await Message.findById(messageId);
-    //       if (message) {
-    //         const newComment = {
-    //           commenterId: socket.userId,
-    //           content: comment,
-    //         };
-
-    //         // Add the new comment to the message's comments array
-    //         message.comments.push(newComment);
-    //         await message.save();
-
-    //         // Fetch the commenter's username from the database
-    //         const commenter = await User.findById(socket.userId);
-
-    //         // Notify all users in the group of the new comment
-    //         if (message.groupId) {
-    //           io.to(message.groupId.toString()).emit("new-comment", {
-    //             messageId,
-    //             comment: {
-    //               commenterId: socket.userId,
-    //               commenterName: commenter.username,
-    //               content: comment,
-    //               createdAt: new Date(),
-    //             },
-    //           });
-    //         }
-    //       }
-    //     } catch (error) {
-    //       console.error("Error posting comment:", error);
-    //       socket.emit("error", {
-    //         message: "An error occurred while posting the comment",
-    //       });
-    //     }
-    //   });
   });
 };
-
-export default socketHandler;

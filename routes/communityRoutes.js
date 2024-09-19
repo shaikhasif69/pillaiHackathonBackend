@@ -10,6 +10,7 @@ import {
   getAllEvents,
   getEnrolledEvents,
   getEventsByCommunity,
+  getJoinedCommunities,
   getOngoingEvents,
   getPendingCommunities,
   getPostsByCommunity,
@@ -22,6 +23,7 @@ import {
   leaveCommunity,
   listCommunities,
   listCommunitiesMembers,
+  listCommunitiesNotJoined,
   updateCommunity,
   updateEvent,
 } from "./../controllers/communityController.js";
@@ -35,6 +37,7 @@ import {
   writePost,
 } from "../controllers/postController.js";
 import upload from "../helpers/multer.js";
+import { getPreviousMessages } from "../controllers/council/groupController.js";
 
 const communityRouter = express.Router();
 //  community Routes
@@ -57,7 +60,7 @@ communityRouter.get("/getongoing", getOngoingEvents);
 communityRouter.post("/joinEvent/:eventId", auth, joinEvent);
 communityRouter.get("/enrolled-event", auth, getEnrolledEvents);
 communityRouter.get("/get-community", auth, getUserCommunities);
-
+communityRouter.get("/get-prevMessage/:roomId", getPreviousMessages);
 // EVENTS Routes
 communityRouter.post("/events", auth, upload.single("image"), createEvent); // Create an event
 communityRouter.put(
@@ -85,7 +88,9 @@ communityRouter.patch(
   updateCommunity
 );
 communityRouter.delete("/delete-community/:communityId", auth, deleteCommunity);
-communityRouter.post("/join-community:communityId", auth, joinCommunity);
+communityRouter.post("/join-community/:communityId", auth, joinCommunity);
+communityRouter.get("/not-joined-community", auth, listCommunitiesNotJoined);
+communityRouter.get("/getJoined-community", auth, getJoinedCommunities);
 communityRouter.delete("/leave-community", auth, leaveCommunity);
 communityRouter.get("/communityPost/:communityId", getPostsByCommunity);
 communityRouter.delete("/deletePost", auth, deletePost); //ADMIN CAN DELETE USER POST tOOO

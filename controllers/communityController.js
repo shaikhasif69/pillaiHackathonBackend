@@ -101,7 +101,6 @@ export const getUserCommunities = async (req, res) => {
         select: "username", // Only select the username
       })
       .exec();
-
     if (!communities.length) {
       return res
         .status(404)
@@ -735,7 +734,7 @@ export const deleteCommunity = async (req, res) => {
 export const joinCommunity = async (req, res) => {
   const { communityId } = req.params;
   const userId = req.userId; // Get userId from auth middleware
-
+  console.log(communityId);
   try {
     const community = await Community.findById(communityId);
 
@@ -762,6 +761,93 @@ export const joinCommunity = async (req, res) => {
     res.status(500).json({ message: "Something went wrong" });
   }
 };
+export const listCommunitiesNotJoined = async (req, res) => {
+  const userId = req.userId; // Get userId from auth middleware
+
+  try {
+    // Fetch all communities
+    const allCommunities = await Community.find();
+
+    // Fetch the user's communities
+    const userCommunities = await Community.find({
+      "members.userId": userId,
+    });
+
+    // Extract the IDs of communities the user is a member of
+    const userCommunityIds = userCommunities.map((community) =>
+      community._id.toString()
+    );
+
+    // Filter out communities the user is a member of
+    const communitiesNotJoined = allCommunities.filter(
+      (community) => !userCommunityIds.includes(community._id.toString())
+    );
+
+    res.status(200).json(communitiesNotJoined);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+export const getJoinedCommunities = async (req, res) => {
+  const userId = req.userId; // Get userId from the auth middleware
+
+  try {
+    // Find communities where the user is a member and include posts and their tags
+    let joinedCommunities = await Community.find({ "members.userId": userId })
+      .select("name description imageUrl createdAt status posts creator") // Include creator
+      .populate({
+        path: "posts.tags", // Populate the tags inside the posts
+        select: "name", // Only return the 'name' field of the tags
+      })
+      .populate({
+        path: "creator.userId", // Populate the creator's userId from the User model
+        select: "username", // Get the username of the creator
+      })
+      .exec();
+
+    if (!joinedCommunities.length) {
+      return res
+        .status(404)
+        .json({ message: "User has not joined any communities." });
+    }
+
+    // Modify the response to remove the extra _id field inside creator.userId
+    joinedCommunities = joinedCommunities.map((community) => {
+      if (community.creator && community.creator.userId) {
+        community.creator.userId = community.creator.userId._id; // Set userId to the value of _id
+      }
+      return community;
+    });
+
+    res.status(200).json(joinedCommunities);
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+// export const getJoinedCommunities = async (req, res) => {
+//   const userId = req.userId; // Get userId from the auth middleware
+
+//   try {
+//     // Find communities where the user is a member and include posts
+//     const joinedCommunities = await Community.find({ "members.userId": userId })
+//       .select("name description imageUrl createdAt status posts")
+//       .exec();
+
+//     if (!joinedCommunities.length) {
+//       return res
+//         .status(404)
+//         .json({ message: "User has not joined any communities." });
+//     }
+
+//     res.status(200).json(joinedCommunities);
+//   } catch (error) {
+//     res.status(500).json({ message: "Something went wrong" });
+//   }
+// };
+
 export const leaveCommunity = async (req, res) => {
   const { communityId } = req.body; // The community the user wants to leave
   const userId = req.userId; // Get userId from auth middleware
@@ -882,13 +968,14 @@ export const listCommunities = async (req, res) => {
 
   try {
     // Calculate the number of documents to skip
-    const skip = (page - 1) * limit;
+    // const skip = (page - 1) * limit;
 
     // Retrieve communities with pagination
-    const communities = await Community.find()
-      .select("name description creator createdAt, imageUrl status")
-      .skip(skip)
-      .limit(parseInt(limit)); // Adjust the fields as needed
+    const communities = await Community.find().select(
+      "name description creator createdAt, imageUrl status"
+    );
+    // .skip(skip)
+    // .limit(parseInt(limit)); // Adjust the fields as needed
 
     // Get the total count of communities for pagination info
     const total = await Community.countDocuments();
@@ -900,9 +987,9 @@ export const listCommunities = async (req, res) => {
 
     // Return the list of communities with pagination info
     res.status(200).json({
-      total, // Total number of communities
-      page: parseInt(page), // Current page
-      totalPages: Math.ceil(total / limit), // Total pages based on limit
+      // total, // Total number of communities
+      // page: parseInt(page), // Current page
+      // totalPages: Math.ceil(total / limit), // Total pages based on limit
       communities, // Communities for the current page
     });
   } catch (error) {
