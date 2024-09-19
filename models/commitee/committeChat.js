@@ -47,9 +47,9 @@ const messageSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  disussion: {
+  discussion: {
     type: Boolean,
-    default: true, // false for private message, true for discussion
+    default: true,
   },
   content: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },

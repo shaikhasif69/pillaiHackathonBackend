@@ -32,7 +32,7 @@ socket.on("previousMessages", (messages) => {
 // Send a message to the room
 socket.emit("message", {
   roomId: "room1",
-  userId: "66e6926336455070e72e4bcb",
+  userId: "",
   content: "Hello from sai!",
 });
 
