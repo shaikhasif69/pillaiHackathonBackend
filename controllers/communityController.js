@@ -198,9 +198,8 @@ export const getUpcomingEvents = async (req, res) => {
       status: "pending", // Corrected to "approved" for upcoming events
     });
 
-    // Process events to include participant count and details
+    // Process events to include participant details
     const processedEvents = events.map((event) => {
-      const participantCount = event.participants.length;
       const participantDetails = event.participants.map((participant) => ({
         userId: participant.userId,
         username: participant.username,
@@ -208,21 +207,13 @@ export const getUpcomingEvents = async (req, res) => {
 
       return {
         ...event.toObject(), // Convert Mongoose document to plain object
-        participantCount,
         participantDetails,
       };
     });
 
-    // Calculate total number of participants across all events
-    const totalParticipants = processedEvents.reduce(
-      (total, event) => total + event.participantCount,
-      0
-    );
-
-    // Respond with the events and total participants
+    // Respond with the events (without total participants)
     res.status(200).json({
       events: processedEvents,
-      totalParticipants,
     });
   } catch (error) {
     // Handle errors
@@ -251,9 +242,8 @@ export const getOngoingEvents = async (req, res) => {
       .populate("community", "name") // Populate the community field to get the community name
       .exec();
 
-    // Process events to include participant count, community name, and details
+    // Process events to include participant details and community name
     const processedEvents = events.map((event) => {
-      const participantCount = event.participants.length;
       const participantDetails = event.participants.map((participant) => ({
         userId: participant.userId,
         username: participant.username,
@@ -261,23 +251,15 @@ export const getOngoingEvents = async (req, res) => {
 
       return {
         ...event.toObject(), // Convert Mongoose document to plain object
-        participantCount,
-        // participantDetails,
-        // communityName: event.community.name, // Extract community name
+        participantDetails,
+        communityName: event.community.name, // Extract community name
         location: event.location, // Include location in the response
       };
     });
 
-    // Calculate total number of participants
-    const totalParticipants = processedEvents.reduce(
-      (total, event) => total + event.participantCount,
-      0
-    );
-
-    // Include totalParticipants in the response
+    // Respond with the events (without total participants)
     res.status(200).json({
       events: processedEvents,
-      totalParticipants,
     });
   } catch (error) {
     res.status(500).json({
