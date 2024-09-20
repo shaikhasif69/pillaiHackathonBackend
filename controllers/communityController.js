@@ -207,7 +207,7 @@ export const getUpcomingEvents = async (req, res) => {
 
       return {
         ...event.toObject(), // Convert Mongoose document to plain object
-        participantDetails,
+        // participantDetails,
       };
     });
 
@@ -251,7 +251,7 @@ export const getOngoingEvents = async (req, res) => {
 
       return {
         ...event.toObject(), // Convert Mongoose document to plain object
-        participantDetails,
+        // participantDetails,
         communityName: event.community.name, // Extract community name
         location: event.location, // Include location in the response
       };
