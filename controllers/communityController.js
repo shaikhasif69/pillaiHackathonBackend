@@ -194,7 +194,7 @@ export const getUpcomingEvents = async (req, res) => {
     const today = new Date();
     // Fetch all approved events where the event date is greater than today's date
     const events = await Event.find({
-      date: { $gt: today },
+      // date: { $gt: today },
       status: "pending", // Corrected to "approved" for upcoming events
     });
 
