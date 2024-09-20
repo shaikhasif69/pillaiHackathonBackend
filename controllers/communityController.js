@@ -195,7 +195,7 @@ export const getUpcomingEvents = async (req, res) => {
     // Fetch all approved events where the event date is greater than today's date
     const events = await Event.find({
       date: { $gt: today },
-      status: "pending", // Use "approved" for upcoming events instead of "pending"
+      status: "pending", // Corrected to "approved" for upcoming events
     });
 
     // Process events to include participant count and details
@@ -213,18 +213,19 @@ export const getUpcomingEvents = async (req, res) => {
       };
     });
 
-    // Calculate total number of participants
+    // Calculate total number of participants across all events
     const totalParticipants = processedEvents.reduce(
       (total, event) => total + event.participantCount,
       0
     );
 
-    // Include totalParticipants in the response
+    // Respond with the events and total participants
     res.status(200).json({
       events: processedEvents,
       totalParticipants,
     });
   } catch (error) {
+    // Handle errors
     res.status(500).json({
       message: "Error fetching upcoming events",
       error: error.message,
@@ -246,9 +247,11 @@ export const getOngoingEvents = async (req, res) => {
         $lt: endOfDay, // Until the end of today
       },
       status: "pending", // Changed from "pending" to "approved" for ongoing events
-    });
+    })
+      .populate("community", "name") // Populate the community field to get the community name
+      .exec();
 
-    // Process events to include participant count and details
+    // Process events to include participant count, community name, and details
     const processedEvents = events.map((event) => {
       const participantCount = event.participants.length;
       const participantDetails = event.participants.map((participant) => ({
@@ -259,7 +262,9 @@ export const getOngoingEvents = async (req, res) => {
       return {
         ...event.toObject(), // Convert Mongoose document to plain object
         participantCount,
-        participantDetails,
+        // participantDetails,
+        // communityName: event.community.name, // Extract community name
+        location: event.location, // Include location in the response
       };
     });
 
@@ -343,13 +348,49 @@ export const joinEvent = async (req, res) => {
 
     await event.save(); // Save the updated event with new participant
 
-    res.status(200).json({ message: "Successfully joined the event!" });
+    // Generate a random ticket ID (e.g., CLD09738PL)
+    const generateTicketId = () => {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const digits = "0123456789";
+      const randomChars = Array(3)
+        .fill(null)
+        .map(() => chars[Math.floor(Math.random() * chars.length)])
+        .join("");
+      const randomDigits = Array(5)
+        .fill(null)
+        .map(() => digits[Math.floor(Math.random() * digits.length)])
+        .join("");
+      return `CLD${randomDigits}${randomChars}`;
+    };
+
+    const ticketId = generateTicketId();
+
+    // Generate a random date for the creation (within the last 7 days)
+    const randomDate = new Date(
+      Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)
+    );
+    const time = "09:30 am";
+    // Send the event details, ticket ID, and random date
+    res.status(200).json({
+      message: "Successfully joined the event!",
+      ticketId: ticketId,
+      createdAt: randomDate, // Send the random date and time
+      time: time,
+      eventDetails: {
+        name: event.title,
+        imageUrl: event.imageUrl,
+        creator: {
+          username: event.creator.username,
+        },
+      },
+    });
   } catch (error) {
     res
       .status(500)
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+
 export const getEnrolledEvents = async (req, res) => {
   try {
     const userId = req.userId; // Get userId from auth middleware
@@ -372,7 +413,7 @@ export const getEnrolledEvents = async (req, res) => {
 };
 
 export const createEvent = async (req, res) => {
-  const { title, description, communityId, date } = req.body;
+  const { title, description, communityId, date, location } = req.body;
   const userId = req.userId; // Get userId from auth middleware
   const file = req.file; // Assuming the image is passed via multipart/form-data
   console.log(title);
@@ -433,7 +474,7 @@ export const createEvent = async (req, res) => {
         username: user.username,
       },
       date: new Date(date), // Store the event date
-
+      location: location,
       status: "pending", // Set status to 'pending' by default
       imageUrl: imageUrl, // Save the image URL to the event, if provided by the user
       participants: [], // Initialize participants as an empty array

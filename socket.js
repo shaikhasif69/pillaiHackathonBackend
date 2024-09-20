@@ -205,15 +205,15 @@ export const socketHandler = (server) => {
         });
 
         await newMessage.save(); // Save the message to the database
-        console.log(newMessage);
+        console.log("hlelo", newMessage);
 
         // Broadcast the message to the room
         io.to(roomId).emit("message", newMessage);
       }
     );
 
-    socket.on("disconnect", () => {
-      console.log("User disconnected");
-    });
+    // socket.on("disconnect", () => {
+    //   console.log("User disconnected");
+    // });
   });
 };

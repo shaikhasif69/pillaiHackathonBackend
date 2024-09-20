@@ -22,7 +22,7 @@ socket.on("connect", () => {
       .sort()
       .join("_"), // Room ID based on the two users
     userId: "66e6926336455070e72e4bcb", // Your user ID
-    content: "Hello! This is a test message.", // Message content
+    content: "Hello! worlldldldldldl.", // Message content
     discussion: false, // Set this to false for 1v1 messages
   });
 });
@@ -41,6 +41,6 @@ socket.on("error", (errMsg) => {
 });
 
 // Handle disconnection
-socket.on("disconnect", () => {
-  console.log("Disconnected from server!");
-});
+// socket.on("disconnect", () => {
+//   console.log("Disconnected from server!");
+// });
