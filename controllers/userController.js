@@ -11,6 +11,9 @@ import User from "../models/user.js";
 import cloudinary from "../helpers/cloudinary.js";
 import Event from "../models/communityEvents.js";
 import Community from "../models/community.js";
+import Message from "../models/commitee/committeChat.js";
+import Message1 from "../models/studentForum/studentMessage.js";
+import Mentor from "../models/mentorship.js";
 
 const SECRET = "PILLAI";
 
@@ -20,11 +23,13 @@ export const signup = async (req, res) => {
   try {
     const existingCollegeStudent = await Student.findOne({ email });
     const existingCollegeFaculty = await Faculty.findOne({ email });
-    if (!existingCollegeStudent && !existingCollegeFaculty) {
+    const existingMentoo = await Mentor.findOne({ email });
+    if (!existingCollegeStudent && !existingCollegeFaculty && !existingMentoo) {
       return res.status(400).json({
         message: "you mail not registered with college.Contact Admin",
       });
     }
+
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
@@ -233,10 +238,12 @@ export const getUserProfile = async (req, res) => {
   }
 };
 export const editProfile = async (req, res) => {
-  const userId = req.userId; // Assuming userId comes from auth middleware
-  console.log(userId);
+  const userId = req.userId; // Coming from auth middleware
+  const userRole = req.userRole; // Either 'student', 'faculty', or 'mentor'
+
+  // Extract common fields from the request body
   const { username, email } = req.body;
-  const file = req.file; // Assuming file is uploaded via multer middleware
+  const file = req.file; // Assuming profile image is uploaded via multer middleware
 
   let imageUrl = ""; // Initialize imageUrl
 
@@ -264,12 +271,53 @@ export const editProfile = async (req, res) => {
       imageUrl = uploadResult.secure_url; // Save the image URL
     }
 
-    // Find and update the user profile with only provided fields
+    // Prepare the updates object with common fields (username, email)
     const updates = { username, email };
+
     if (imageUrl) {
       updates.imageUrl = imageUrl; // Add imageUrl to updates if available
     }
 
+    // Add role-specific fields
+    if (userRole === "student") {
+      // For student role
+      const { preferredSubjects, researchInterest } = req.body;
+      updates.studentDetails = {
+        preferredSubjects,
+        researchInterest,
+      };
+    } else if (userRole === "faculty") {
+      // For faculty role
+      const {
+        department,
+        position,
+        coursesYouTeach,
+        researchSpecialist,
+        currentResearch,
+        pastResearch,
+      } = req.body;
+      updates.facultyDetails = {
+        department,
+        position,
+        coursesYouTeach,
+        researchSpecialist,
+        currentResearch,
+        pastResearch,
+      };
+    } else if (userRole === "mentor") {
+      // For mentor role
+      const { currentJob, careerPath, industry, skills, mentoringAreas } =
+        req.body;
+      updates.mentorshipDetails = {
+        currentJob,
+        careerPath,
+        industry,
+        skills,
+        mentoringAreas,
+      };
+    }
+
+    // Find and update the user profile with only the provided fields
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $set: updates }, // Use $set to update only specified fields
@@ -287,6 +335,7 @@ export const editProfile = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+
 export const saveUserForm = async (req, res) => {
   const {
     userId,
@@ -331,5 +380,53 @@ export const saveUserForm = async (req, res) => {
     res.status(500).json({
       message: "Failed to save form data.",
     });
+  }
+};
+
+export const getTwoUserChat = async (req, res) => {
+  const { userId1, userId2 } = req.query; // Get the two user IDs from the query parameters
+
+  if (!userId1 || !userId2) {
+    return res.status(400).json({ error: "Both user IDs are required" });
+  }
+
+  try {
+    // Create roomId for both possible combinations of userIds
+    const roomId1 = `${userId1}_${userId2}`;
+    const roomId2 = `${userId2}_${userId1}`;
+
+    // Find messages where roomId matches either combination
+    const messages = await Message.find({
+      roomId: { $in: [roomId1, roomId2] },
+    }).sort({ createdAt: 1 }); // Sort messages by date (oldest to newest)
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error fetching chats:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+export const getMessagesByGroupId = async (req, res) => {
+  const { groupId } = req.query; // Assuming groupId is passed as a URL parameter
+
+  try {
+    // Fetch all messages for the given groupId, populate the user who sent the message
+    const messages = await Message1.find({ group: groupId })
+      .populate("user", "username email imageUrl") // Populating user fields
+      .populate("voters.user", "username") // Populating voter user details
+      .sort({ createdAt: -1 }); // Sorting by the latest message first (optional)
+
+    if (!messages) {
+      return res
+        .status(404)
+        .json({ message: "No messages found for this group" });
+    }
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error fetching messages: ", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching messages", error: error.message });
   }
 };

@@ -15,6 +15,7 @@ export const socketHandler = (server) => {
 
   io.on("connection", (socket) => {
     console.log("A user connected");
+    // *************--code for student forums ****************
     socket.on("joinstudentGroup", async ({ groupId, userId }) => {
       try {
         const group = await Group.findById(groupId);
@@ -140,7 +141,11 @@ export const socketHandler = (server) => {
         });
       }
     });
+    // *************--code for student forums ends  ****************
+
     // Join a room by roomID
+    // *************--code for group and 1v1 chat  ****************
+
     socket.on("joinRoom", async ({ roomId, userId }) => {
       console.log("joinRoom event received"); // Log when the event is received
 
@@ -200,15 +205,15 @@ export const socketHandler = (server) => {
         });
 
         await newMessage.save(); // Save the message to the database
-        console.log(newMessage);
+        console.log("hlelo", newMessage);
 
         // Broadcast the message to the room
         io.to(roomId).emit("message", newMessage);
       }
     );
 
-    socket.on("disconnect", () => {
-      console.log("User disconnected");
-    });
+    // socket.on("disconnect", () => {
+    //   console.log("User disconnected");
+    // });
   });
 };
