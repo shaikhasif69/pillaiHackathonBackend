@@ -14,6 +14,7 @@ import Faculty from "./models/pillaiFaculty.js";
 import User from "./models/user.js";
 import adminRouter from "./routes/admin.js";
 import jwt from "jsonwebtoken";
+import axios from "axios";
 
 const SECRET = "PILLAI";
 
@@ -35,6 +36,21 @@ app.get("/", (req, res) => {
   res.send(
     `aai ghala changes adhich sangat java  mala 18 parent backend end krycha aahe m on a mission to find a  girl`
   );
+});
+app.get("/dashin", async (req, res) => {
+  try {
+    // Fetch data from API
+    const response = await axios.get(
+      "https://pillaihackathonbackend.onrender.com/admin/getFaculty"
+    );
+    const facultyData = response.data; // The response data
+
+    // Render the EJS view, passing the data to the template
+    res.render("index", { facultyData });
+  } catch (error) {
+    console.error("Error fetching faculty data:", error);
+    res.status(500).send("Error fetching faculty data");
+  }
 });
 app.get("/dash", (req, res) => {
   res.render("index"); // Render the "index.ejs" template
