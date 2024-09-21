@@ -10,6 +10,8 @@ import {
   getUserProfile,
   getTwoUserChat,
   getMessagesByGroupId,
+  getAllUsers,
+  getUserProfileByName,
 } from "../controllers/userController.js";
 import { getCommunityPostsAndEvents } from "../controllers/communityController.js";
 import upload from "../helpers/multer.js";
@@ -34,6 +36,8 @@ userRouter.get("/admin/login", (req, res) => {
   res.render("authentication/sign-in");
 });
 userRouter.get("/profile", auth, getUserProfile);
+userRouter.get("/profile-name/:username", getUserProfileByName);
+userRouter.get("/getAllUsers", getAllUsers);
 userRouter.patch("/edit-profile", auth, upload.single("image"), editProfile);
 
 userRouter.get("/admin/sign-up", (req, res) => {

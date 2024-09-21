@@ -1,5 +1,3 @@
-# Either be a bitch or be a fan of Cristiano Ronaldo
-
 ## pillaiHackathonBackend
 
 This repo will have the backend code~
@@ -7,7 +5,7 @@ This repo will have the backend code~
 # Setup
 
 ```
-git clone https://github.com/
+git clone https://github.com/Aadarsh-Mane/pillaiHackathonBackend
 
 ```
 
