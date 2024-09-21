@@ -174,7 +174,7 @@ export const getPendingCommunities = async (req, res) => {
     const communities = await Community.find({
       facultyId,
       status: "pending",
-    }).select("name description creator status"); // Adjust fields as needed
+    }).select("name description creator status imageUrl"); // Adjust fields as needed
 
     if (communities.length === 0) {
       return res
