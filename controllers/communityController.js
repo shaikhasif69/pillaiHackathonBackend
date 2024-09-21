@@ -193,7 +193,7 @@ export const getFacultyCommities = async (req, res) => {
   const facultyId = req.userId; // Assuming middleware attaches userId
   try {
     // Find all communities where the facultyId matches without populating faculty details
-    const communities = await Community.find({ facultyId });
+    const communities = await Community.find({ facultyId, status: "approved" });
 
     if (!communities.length) {
       return res
