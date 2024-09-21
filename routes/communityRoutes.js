@@ -10,6 +10,7 @@ import {
   getAllEvents,
   getEnrolledEvents,
   getEventsByCommunity,
+  getFacultyCommities,
   getJoinedCommunities,
   getOngoingEvents,
   getPendingCommunities,
@@ -56,6 +57,7 @@ communityRouter.get(
 );
 
 communityRouter.get("/get-community", auth, getUserCommunities);
+communityRouter.get("/get-faculty-community", auth, getFacultyCommities);
 communityRouter.get("/getupcoming", getUpcomingEvents);
 communityRouter.get("/getongoing", getOngoingEvents);
 communityRouter.post("/joinEvent/:eventId", auth, joinEvent);
