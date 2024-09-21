@@ -150,6 +150,69 @@ export const resendOTP = async (req, res) => {
       .json({ message: "Failed to resend OTP. Please try again." });
   }
 };
+export const getAllUsers = async (req, res) => {
+  try {
+    // Query to find all users where both username and email exist
+    const users = await User.find({
+      username: { $exists: true, $ne: null },
+      email: { $exists: true, $ne: null },
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+};
+export const getUserProfileByName = async (req, res) => {
+  const { username } = req.params; // Assuming username is passed as a route parameter
+
+  try {
+    // Find the user by username
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Determine if the user is a student or faculty
+    let role = null;
+    const faculty = await Faculty.findOne({ email: user.email });
+    const student = await Student.findOne({ email: user.email });
+
+    if (faculty) {
+      role = "faculty";
+    } else if (student) {
+      role = "student";
+    } else {
+      role = "user"; // Default role if not identified as student or faculty
+    }
+
+    // Find the communities the user has created
+    const createdCommunities = await Community.find({
+      "creator.userId": user._id,
+    });
+
+    // Find the communities the user has joined
+    const joinedCommunities = await Community.find({
+      "members.userId": user._id,
+    });
+
+    // Respond with the user's details, created communities, joined communities, and role
+    res.status(200).json({
+      name: user.username,
+      email: user.email,
+      imageUrl: user.imageUrl,
+      role,
+      createdCommunities,
+      joinedCommunities,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
 export const getUserProfile = async (req, res) => {
   const userId = req.userId; // Assuming userId comes from auth middleware
   console.log(userId);
