@@ -123,7 +123,7 @@ export const getUserCommunities = async (req, res) => {
 export const approveCommunity = async (req, res) => {
   const { communityId, status } = req.body;
   const facultyId = req.userId; // Assuming the faculty ID is in req.userId
-
+  console.log(facultyId);
   try {
     // Ensure status is either 'approved' or 'rejected'
     if (!["approved", "rejected"].includes(status)) {
