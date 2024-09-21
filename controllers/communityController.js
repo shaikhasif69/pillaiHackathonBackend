@@ -121,12 +121,12 @@ export const getUserCommunities = async (req, res) => {
   }
 };
 export const approveCommunity = async (req, res) => {
-  const { communityId, status } = req.body;
+  const { communityId, statusId } = req.params;
   const facultyId = req.userId; // Assuming the faculty ID is in req.userId
   console.log(facultyId);
   try {
     // Ensure status is either 'approved' or 'rejected'
-    if (!["approved", "rejected"].includes(status)) {
+    if (!["approved", "rejected"].includes(statusId)) {
       return res.status(400).json({ message: "Invalid status" });
     }
 
@@ -149,8 +149,8 @@ export const approveCommunity = async (req, res) => {
     }
 
     // Update the community status
-    community.status = status;
-    if (status === "approved") {
+    community.status = statusId;
+    if (statusId === "approved") {
       community.approvedFaculty = facultyId;
     } else {
       community.approvedFaculty = null;
