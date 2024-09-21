@@ -189,6 +189,29 @@ export const getPendingCommunities = async (req, res) => {
       .json({ message: "Something went wrong", error: error.message });
   }
 };
+export const getFacultyCommities = async (req, res) => {
+  const facultyId = req.userId; // Assuming middleware attaches userId
+  try {
+    // Find all communities where the facultyId matches without populating faculty details
+    const communities = await Community.find({ facultyId });
+
+    if (!communities.length) {
+      return res
+        .status(404)
+        .json({ message: "No communities found for this faculty" });
+    }
+
+    res.status(200).json(communities);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+
+// router.get('/communities/faculty', async (req, res) => {
+// });
+
 export const getUpcomingEvents = async (req, res) => {
   try {
     const today = new Date();
