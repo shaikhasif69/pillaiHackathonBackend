@@ -48,7 +48,11 @@ communityRouter.post(
   upload.single("image"),
   createCommunity
 );
-communityRouter.post("/approve-community", auth, approveCommunity);
+communityRouter.post(
+  "/approve-community/:communityId/:statusId",
+  auth,
+  approveCommunity
+);
 // communityRouter.post("/approve-community", auth, approveCommunity);
 communityRouter.get("/pending-community-approval", auth, getPendingCommunities);
 communityRouter.get(
