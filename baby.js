@@ -1,12 +1,11 @@
-// scripts/importClubs.js
 import mongoose from "mongoose";
 import csv from "csv-parser";
 import fs from "fs";
-import Club from "./models/myclubs.js";
+import Mentor from "./models/mentorship.js"; // Import the Mentor model
 
 // MongoDB connection string
 const MONGODB_URI =
-  "mongodb+srv://theshaikhasif03:fPQSb56RBLe2lG84@cluster1.o65jh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1"; // Replace with your MongoDB URI
+  "mongodb+srv://theshaikhasif03:fPQSb56RBLe2lG84@cluster1.o65jh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1";
 
 // Connect to MongoDB
 mongoose
@@ -19,15 +18,15 @@ mongoose
   .catch((err) => console.error("Error connecting to MongoDB", err));
 
 const importClubsFromCSV = async () => {
-  const clubs = [];
+  const mentors = []; // Array to store mentors
 
   // Read the CSV file
-  fs.createReadStream("clubs.csv") // Replace with the path to your CSV file
+  fs.createReadStream("mentors.csv") // Replace with the path to your CSV file
     .pipe(csv())
     .on("data", (row) => {
-      clubs.push({
-        club_id: row.club_id,
-        club_name: row.club_name,
+      mentors.push({
+        mentor_id: row.mentor_id,
+        mentor_name: row.mentor_name,
         category_1: row.category_1,
         category_2: row.category_2,
         category_3: row.category_3,
@@ -35,10 +34,10 @@ const importClubsFromCSV = async () => {
     })
     .on("end", async () => {
       try {
-        // Insert clubs data into the MongoDB collection
-        await Club.insertMany(clubs);
+        // Insert mentor data into the MongoDB collection using Mentor model
+        await Mentor.insertMany(mentors); // Use insertMany to insert all mentor records at once
         console.log("CSV data successfully inserted into MongoDB");
-        mongoose.connection.close();
+        mongoose.connection.close(); // Close the connection after insertion
       } catch (error) {
         console.error("Error inserting data into MongoDB", error);
       }
